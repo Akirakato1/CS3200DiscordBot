@@ -13,7 +13,6 @@ public class MyEventListener extends ListenerAdapter{
     
     if (content.startsWith("!ping")) {
       channel.sendMessage("Pong" + event.getJDA().getPing()).queue();
-      
     }
   }
   public void onUserTyping(UserTypingEvent event) {
