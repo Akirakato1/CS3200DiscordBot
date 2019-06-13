@@ -88,7 +88,7 @@ public class Database{
     // Create a table
     try {
         String createString =
-              "CREATE TABLE " + this.tableName + " ( " +
+              "CREATE TABLE if not exists" + this.tableName + " ( " +
               "ID INTEGER NOT NULL, " +
               "NAME varchar(40) NOT NULL, " +
               "STREET varchar(40) NOT NULL, " +
@@ -107,7 +107,7 @@ public class Database{
     
     // Drop the table
     try {
-        String dropString = "DROP TABLE " + this.tableName;
+        String dropString = "DROP TABLE if exists" + this.tableName;
       this.executeUpdate(conn, dropString);
       System.out.println("Dropped the table");
       } catch (SQLException e) {
@@ -117,5 +117,6 @@ public class Database{
     }
     
   }
+ 
   
 }
