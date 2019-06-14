@@ -52,7 +52,7 @@ public class GeneralCommandManager {
             .createTextChannel(channelname);
         channelaction.setTopic("Testing Channels");
         channelaction.setParent(commandEvent.getGuild().getCategoriesByName(parent, true).get(0));
-        channelaction.addPermissionOverride(commandEvent.getGuild().getPublicRole(), 0, deny)
+        //channelaction.addPermissionOverride(commandEvent.getGuild().getPublicRole(), 0, deny)
         channelaction.queue();
         
       }

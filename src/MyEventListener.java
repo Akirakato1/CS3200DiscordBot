@@ -1,9 +1,11 @@
 import java.beans.EventSetDescriptor;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.*;
+import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.core.events.message.*;
 import net.dv8tion.jda.core.events.user.UserTypingEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
@@ -12,12 +14,22 @@ import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 public class MyEventListener extends ListenerAdapter{
   GeneralCommandManager gcm;
   InstanceCommandManager icm;
-  
-  public MyEventListener() {
+  Database db;
+  public MyEventListener(Database db) {
     this.gcm = new GeneralCommandManager();
     this.icm = new InstanceCommandManager();
+    this.db=db;
   }
-
+  
+  public void onGuildMemberJoin(GuildMemberJoinEvent event){
+    try {
+      this.db.initPlayer(event.getUser());
+    }
+    catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+  
   public void onMessageReceived(MessageReceivedEvent event) {
     if (event.getAuthor().isBot()) return;
     
@@ -26,7 +38,6 @@ public class MyEventListener extends ListenerAdapter{
     MessageChannel channel = event.getChannel();
     TextChannel channelt=event.getTextChannel();
     ChannelManager cm=channelt.getManager();
-    
     if(content[0].startsWith("!")) {
       // Assume it is a command, redirect to appropriate command manager.
       String category = event.getTextChannel().getParent().getName();
