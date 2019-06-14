@@ -8,12 +8,11 @@ public class Main {
     try {
       JDA api = new JDABuilder(AccountType.BOT).setToken("NTg4NDI1Nzg1OTIwOTc4OTY5.XQFB9Q.Oi4thZhK0qPXpH4_Hg9xXqny5Ys").build();
       api.addEventListener(new MyEventListener());
-      List<Guild> guilds= api.getGuilds();
-      //System.out.println(guilds.get(0).getName());
-      //Database app = new Database();
-     // app.run();
+      Database db=new Database("sql9295357","lYzGNS9zs5","sql9.freemysqlhosting.net",3306,"sql9295357");
+    
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 }
+
