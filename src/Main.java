@@ -10,7 +10,7 @@ public class Main {
       api.addEventListener(new MyEventListener());
       List<Guild> guilds= api.getGuilds();
       //System.out.println(guilds.get(0).getName());
-      Database app = new Database();
+      //Database app = new Database();
      // app.run();
     } catch (Exception e) {
       e.printStackTrace();
