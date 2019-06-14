@@ -1,42 +1,37 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Properties;
 
-/*
- * Database host: https://www.freemysqlhosting.net/
- * username: gamediscordbot@gmail.com
- * password: northeastern2019
- * 
- */
-public class Database{
+public class Database {
 
-  /** The name of the MySQL account to use (or empty for anonymous) */
-  private final String userName = "sql9295357";
-
-  /** The password for the MySQL account (or empty for anonymous) */
-  private final String password = "lYzGNS9zs5";
-
-  /** The name of the computer running MySQL */
-  private final String serverName = "sql9.freemysqlhosting.net";
-
-  /** The port of the MySQL server (default is 3306) */
-  private final int portNumber = 3306;
-
-  /** The name of the database we are testing with (this default is installed with MySQL) */
-  private final String dbName = "sql9295357";
+  private final String userName;
+  private final String password;
+  private final String serverName;
+  private final int portNumber;
+  private final String dbName;
+  private Connection conn;
+ 
+  Database(String un,String pw, String server, int port, String db) throws SQLException {
+    this.userName=un;
+    this.password=pw;
+    this.serverName=server;
+    this.portNumber=port;
+    this.dbName=db;
+    try {
+    this.conn=this.getConnection();
+    System.out.println("Connection Established");
+    } catch (SQLException e) {
+      System.out.println("ERROR: Could not connect to the database");
+      e.printStackTrace();
+      return;
+    }
+  }
   
-  /** The name of the table we are testing with */
-  private final String tableName = "JDBC_TEST";
-  
-  
-  /**
-   * Get a new database connection
-   * 
-   * @return
-   * @throws SQLException
-   */
   public Connection getConnection() throws SQLException {
     Connection conn = null;
     Properties connectionProps = new Properties();
@@ -50,12 +45,6 @@ public class Database{
     return conn;
   }
 
-  /**
-   * Run a SQL command which does not return a recordset:
-   * CREATE/INSERT/UPDATE/DELETE/DROP/etc.
-   * 
-   * @throws SQLException If something goes wrong
-   */
   public boolean executeUpdate(Connection conn, String command) throws SQLException {
       Statement stmt = null;
       try {
@@ -69,54 +58,29 @@ public class Database{
       }
   }
   
-  /**
-   * Connect to MySQL and do some stuff.
-   */
-  public void run() {
-
-    // Connect to MySQL
-    Connection conn = null;
-    try {
-      conn = this.getConnection();
-      System.out.println("Connected to database");
-    } catch (SQLException e) {
-      System.out.println("ERROR: Could not connect to the database");
-      e.printStackTrace();
-      return;
-    }
-
-    // Create a table
-    try {
-        String createString =
-              "CREATE TABLE if not exists" + this.tableName + " ( " +
-              "ID INTEGER NOT NULL, " +
-              "NAME varchar(40) NOT NULL, " +
-              "STREET varchar(40) NOT NULL, " +
-              "CITY varchar(20) NOT NULL, " +
-              "STATE char(2) NOT NULL, " +
-              "ZIP char(5), " +
-              "PRIMARY KEY (ID))";
-      this.executeUpdate(conn, createString);
-      System.out.println("Created a table");
-      } catch (SQLException e) {
-      System.out.println("ERROR: Could not create the table");
-      e.printStackTrace();
-      return;
-    }
-    
-    
-    // Drop the table
-    try {
-        String dropString = "DROP TABLE if exists" + this.tableName;
-      this.executeUpdate(conn, dropString);
-      System.out.println("Dropped the table");
-      } catch (SQLException e) {
-      System.out.println("ERROR: Could not drop the table");
-      e.printStackTrace();
-      return;
-    }
-    
-  }
- 
   
+  public ResultSet getResultSet(String command) throws SQLException {
+    PreparedStatement statement=this.conn.prepareStatement(command);
+    ResultSet result=statement.executeQuery();
+    return result;
+  }
+  public ArrayList<String> getFieldFromTable(String tablename,String field){
+    try {
+    String command="Select "+field+" from "+ tablename;
+    ResultSet result=this.getResultSet(command);
+    ArrayList<String> array=new ArrayList<String>();
+    while(result.next()) {
+      array.add(result.getString(field));
+    }
+    return array;
+    } catch (SQLException e) {
+      System.out.println("ERROR: Could not retrieve "+ field+" from "+tablename);
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
+  public void closeConnection() throws SQLException {
+    this.conn.close();
+  }
 }
