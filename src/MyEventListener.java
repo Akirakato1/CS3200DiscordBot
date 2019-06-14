@@ -10,6 +10,13 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.managers.ChannelManager;
 import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 public class MyEventListener extends ListenerAdapter{
+  GeneralCommandManager gcm;
+  InstanceCommandManager icm;
+  
+  public MyEventListener() {
+    this.gcm = new GeneralCommandManager();
+    this.icm = new InstanceCommandManager();
+  }
 
   public void onMessageReceived(MessageReceivedEvent event) {
     if (event.getAuthor().isBot()) return;
@@ -20,7 +27,19 @@ public class MyEventListener extends ListenerAdapter{
     TextChannel channelt=event.getTextChannel();
     ChannelManager cm=channelt.getManager();
     
+    if(content[0].startsWith("!")) {
+      // Assume it is a command, redirect to appropriate command manager.
+      String category = event.getTextChannel().getParent().getName();
+      if(category.equals("Testing channels") || category.equals("Games")) {
+        // It is an instance message.
+        icm.processCommand(event);
+      }else {
+        // It is not an instance message.
+        gcm.processCommand(event);
+      }
+    }
     
+    /*
     if (content[0].equals("!ping")) {
       channel.sendMessage("Pong" + event.getJDA().getPing()+channel.getId()).queue(); 
     }
@@ -80,6 +99,7 @@ public class MyEventListener extends ListenerAdapter{
       }
       
     }
+    */
   }
   
   public void onUserTyping(UserTypingEvent event) {
