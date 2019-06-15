@@ -11,19 +11,33 @@ import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
 // Handles commands from Instance threads.
 public class InstanceCommandManager {
-  
+  ArrayList<String[]> commands;
   Database db;
+
   public InstanceCommandManager(Database db) {
+    this.commands = new ArrayList<String[]>();
+    commands.add(new String[] { "!help", "context(optional)" });
+    commands.add(new String[] { "!invite", "[\\@recipient(s)]" });
+    commands.add(new String[] { "!leave" });
+    commands.add(new String[] { "!start" });
     this.db = db;
   }
-  
+
   // Process a command. Assume the command begins with the proper delimiter.
   public void processCommand(MessageReceivedEvent commandEvent) {
     System.out.println("Recieved instance command");
-    String[] words = commandEvent.getMessage().getContentStripped().split(" ");
-    // Determine the command.
-    String command = words[0].substring(1);
-    TextChannel channel=commandEvent.getTextChannel();
+    String content = commandEvent.getMessage().getContentStripped();
+    String command = content.substring(1);
+    if (content.contains(":")) {
+      command = command.substring(0, content.indexOf(":") - 1);
+    }
+    String[] arguments = content.substring(content.indexOf(":") + 1).split(",");
+    // Strip whitespace from argument sides
+    for (int i = 0; i < arguments.length; i++) {
+      arguments[i] = arguments[i].trim();
+    }
+
+    TextChannel channel = commandEvent.getTextChannel();
 
     if (command.equals("invite")) {
       // Invite command.
@@ -33,19 +47,22 @@ public class InstanceCommandManager {
       for (Member m : invited) {
         // TODO: Add the invite to the SQL database.
         sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName);
-        db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(), channel.getIdLong());
+        db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(),
+            channel.getIdLong());
       }
     }
     else if (command.equals("leave")) {
       // Leave the instance
-      System.out.println("Members left before leaving: "+commandEvent.getTextChannel().getMembers().size());
-      db.leaveInstance(commandEvent.getAuthor().getIdLong(),commandEvent.getChannel().getIdLong());
+      System.out.println(
+          "Members left before leaving: " + commandEvent.getTextChannel().getMembers().size());
+      db.leaveInstance(commandEvent.getAuthor().getIdLong(), commandEvent.getChannel().getIdLong());
       if (commandEvent.getTextChannel().getMembers().size() <= 3) {
         System.out.println("Deleting channel");
         // This is the last member. Delete the channel.
         db.deleteInstance(channel.getIdLong());
         commandEvent.getTextChannel().delete().queue();
-      } else {
+      }
+      else {
         System.out.println("Removing permissions");
         // Not the last member. Simply remove permissions.
         ArrayList<Permission> permissions = new ArrayList<Permission>();
@@ -60,7 +77,7 @@ public class InstanceCommandManager {
       }
     }
     else if (command.equals("start")) {
-      //TODO: Implement database functions and game functions
+      // TODO: Implement database functions and game functions
     }
   }
 
