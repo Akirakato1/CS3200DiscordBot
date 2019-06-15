@@ -36,7 +36,7 @@ public class InstanceCommandManager {
     else if (command.equals("leave")) {
       // Leave the instance
       System.out.println("Members left before leaving: "+commandEvent.getTextChannel().getMembers().size());
-      if (commandEvent.getTextChannel().getMembers().size() <= 2) {
+      if (commandEvent.getTextChannel().getMembers().size() <= 3) {
         System.out.println("Deleting channel");
         // This is the last member. Delete the channel.
         commandEvent.getTextChannel().delete().queue();

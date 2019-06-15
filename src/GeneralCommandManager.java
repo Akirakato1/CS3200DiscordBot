@@ -1,3 +1,4 @@
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,12 +12,16 @@ import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
 // Handles commands from the General thread(s).
 public class GeneralCommandManager {
-  /*
+  ArrayList<String[]> commands;
   Database db;
   public GeneralCommandManager(Database db) {
+    this.commands = new ArrayList<String[]>();
+    commands.add(new String[] {"!help", "context(optional)"});
+    commands.add(new String[]{"!channelnames"});
+    commands.add(new String[]{"!createinstance", "[public | private]", "gametype", "capacity", "name"});
+    
     this.db = db;
   }
-  */
 
   // Process a command. Assume the command begins with the proper delimiter.
   public void processCommand(MessageReceivedEvent commandEvent) {
@@ -29,7 +34,7 @@ public class GeneralCommandManager {
     String[] arguments = content.substring(content.indexOf(":")+1).split(",");
     // Strip whitespace from argument sides
     for(int i = 0; i < arguments.length; i++) {
-      arguments[i] = arguments[i].strip();
+      arguments[i] = arguments[i].trim();
     }
     
     String[] words = commandEvent.getMessage().getContentStripped().split(" ");
@@ -51,7 +56,47 @@ public class GeneralCommandManager {
     else if (command.equals("createinstance")) {
       // Create a new channel
       // !createinstance: public | private, 
-      String channelname = arguments[0];
+      
+      // Check for public/private permissions
+      String privacy = "";
+      if(arguments[0].equalsIgnoreCase("public")) {
+        // public
+        privacy = "public";
+      } else if(arguments[0].equalsIgnoreCase("private")) {
+        // private
+        privacy = "private";
+      } else {
+        String description = arguments[0]+" should be either \"public\" or \"private\"";
+        channel.sendMessage(errorMessage(command, arguments, 0, description));
+        return;
+      }
+      
+      String gameid = db.getIDbyNameGameType(arguments[1]);
+      
+      System.out.println("game id: "+gameid);
+      
+      if(gameid.equals("invalid gametype")) {
+        String description = arguments[1]+" is not a valid gametype.";
+        channel.sendMessage(errorMessage(command, arguments, 1, description));
+        return;
+      }else if(gameid.equals("no id")) {
+        String description = "Something has gone terribly wrong with the gametype query. Does the gametype contain quotes?";
+        channel.sendMessage(errorMessage(command, arguments, 1, description));
+        return;
+      }
+      
+      
+      int capacity = 0;
+      try {
+        capacity = Integer.parseInt(arguments[2]);
+      }catch(NumberFormatException e) {
+        String description = arguments[2]+" is not an integer.";
+        channel.sendMessage(errorMessage(command, arguments, 2, description));
+        return;
+      }
+      
+      
+      String channelname = arguments[3].replace(" ", "-");
       
       
       // public | private, game_id (name), open slots, channel name
@@ -70,10 +115,13 @@ public class GeneralCommandManager {
       }
       
       if (!nameused) {
+        
+        // Begin creating the Discord channel
         ChannelAction channelaction = commandEvent.getGuild().getController()
             .createTextChannel(channelname);
         channelaction.setTopic("Testing Channels");
         channelaction.setParent(commandEvent.getGuild().getCategoriesByName(parent, true).get(0));
+        
         // Set public permissions (only members may view channel)
         ArrayList<Permission> publicDeny = new ArrayList<Permission>();
         publicDeny.addAll(Permission.getPermissions(Permission.ALL_TEXT_PERMISSIONS));
@@ -81,6 +129,7 @@ public class GeneralCommandManager {
         publicDeny.add(Permission.ADMINISTRATOR);
         channelaction.addPermissionOverride(commandEvent.getGuild().getPublicRole(),
             new ArrayList<Permission>(), publicDeny);
+        
         // Set author permissions
         ArrayList<Permission> authorAllow = new ArrayList<Permission>();
         authorAllow.add(Permission.VIEW_CHANNEL);
@@ -89,8 +138,12 @@ public class GeneralCommandManager {
         channelaction.addPermissionOverride(commandEvent.getMember(), authorAllow,
             new ArrayList<Permission>());
 
-        channelaction.queue();
+        Channel newChannel = channelaction.complete();
         channel.sendMessage("Created channel: " + channelname);
+        
+        // Apply it to the database
+        
+        db.createInstance(privacy, gameid, capacity, newChannel.getIdLong(), channelname);
       }
       else {
         channel.sendMessage("name already used").queue();
@@ -115,13 +168,38 @@ public class GeneralCommandManager {
       */
     }
     else if (command.contentEquals("help")) {
-      ArrayList<String[]> commands = new ArrayList<String[]>();
-      commands.add(new String[]{"!channelnames"});
-      commands.add(new String[]{"!createinstance", "[public | private]", ""});
+      
+      
+      
+      String message = "";
       if(arguments.length == 0) {
-        channel.sendMessage("!channelnames \n!createinstance \n!join");
+        for(String[] function : commands) {
+          message += ", !"+function[0];
+        }
+        message = message.substring(2);
       }
+    } else {
+      // Invalid command, commence suggestions?
     }
 
+  }
+  
+  private String errorMessage(String command, String[] arguments, int invalid, String description) {
+    String message = "Error in !"+command+": ";
+    for(int i = 0; i < arguments.length; i++) {
+      if(i > 0) {
+        message = message.concat(", ");
+      }
+      if(i == invalid) {
+        message = message.concat("```diff ");
+      }
+      message = message.concat(arguments[i]);
+      if(i == invalid) {
+        message = message.concat("```");
+      }
+    }
+    message = message.concat("\n"+description);
+    
+    return message;
   }
 }
