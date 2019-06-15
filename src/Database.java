@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -96,11 +97,11 @@ public class Database {
     }
   }
   
-  public void createInvite(long sender, long receiver, long channel_id) {
+  public void createInvite(long sender, long receiver, long channel_id,String server_name) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "INSERT IGNORE INTO Invite (sender,receiver,instance_id)" + " Values ("
-          + sender + ", " + receiver + ", " + channel_id + ")";
+      String command = "INSERT IGNORE INTO Invite (sender,receiver,instance_id,server_name)" + " Values ("
+          + sender + ", " + receiver + ", " + channel_id +" , '"+server_name+ "')";
       statement.executeUpdate(command);
       System.out.println("Created invite from to " + channel_id);
     }
@@ -166,6 +167,32 @@ public class Database {
     }
   }
   
+  public ArrayList<ArrayList<String>> getInvites(long player_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select * from Invite inner join Instance on "
+          + "Invite.instance_id=Instance.instance_id where receiver="+player_id;
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<ArrayList<String>> invites=new ArrayList<ArrayList<String>>();
+      while (result.next()) {
+        invites.add((ArrayList<String>) 
+            Arrays.asList(
+                result.getString("sender"),
+                result.getString("instance_name"),
+                result.getString("server_name")));
+        }
+      if(invites.size()==0) {
+        return null;
+        }
+      return invites;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving instance record");
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
   public ArrayList<Long> getInstanceIDbyName(String name){
     try {
       Statement statement = this.conn.createStatement();
@@ -218,7 +245,7 @@ public class Database {
       ResultSet result = statement.executeQuery(command);
       ArrayList<String> record=new ArrayList<String>();
       while (result.next()) {
-        for(int i=1;i<4;i++) {
+        for(int i=1;i<5;i++) {
         record.add(result.getString(i));
         }
         }

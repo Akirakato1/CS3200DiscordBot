@@ -21,6 +21,7 @@ public class GeneralCommandManager extends CommandManager{
     commands.add(
         new String[] { "createinstance", "[public | private]", "gametype", "capacity", "name" });
     commands.add(new String[] { "join", "[instance name]" });
+    commands.add(new String[] { "myinvites" });
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -55,7 +56,19 @@ public class GeneralCommandManager extends CommandManager{
       }
       channel.sendMessage("Channel names: " + channelnames).queue();
     }
-
+    else if(command.equals("myinvites")) {
+      ArrayList<ArrayList<String>> invites=this.db.getInvites(commandEvent.getAuthor().getIdLong());
+      String message="";
+      if(invites==null) {
+        channel.sendMessage("No invites, go make friends").queue();
+        return;
+      }
+      for(ArrayList<String> invite: invites) {
+        message=message+"\nAn invitation from "+invite.get(0)+" to join instance "+invite.get(1)+" in server "+ invite.get(2);
+      }
+      sendPrivateMessage(commandEvent.getAuthor(),message);
+      return;
+    }
     else if (command.equals("createinstance")) {
       // Create a new channel
       if(arguments.length != 4) {
