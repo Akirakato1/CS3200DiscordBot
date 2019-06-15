@@ -39,15 +39,17 @@ public class Database {
       return;
     }
   }
-  
-  public void joinInstance(long player_id,long channel_id) {
+
+  public void joinInstance(long player_id, long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String update_freespot = "Update Instance set free_spots=free_spots-1 where instance_id="+channel_id;
-      String delete_invite = "Delete from Invite where instance_id="+channel_id+" and receiver="+player_id;
+      String update_freespot = "Update Instance set free_spots=free_spots-1 where instance_id="
+          + channel_id;
+      String delete_invite = "Delete from Invite where instance_id=" + channel_id + " and receiver="
+          + player_id;
       statement.executeUpdate(update_freespot);
       statement.executeUpdate(delete_invite);
-      this.createPlays(player_id,channel_id);
+      this.createPlays(player_id, channel_id);
       System.out.println("player joined instance");
     }
     catch (SQLException e) {
@@ -55,13 +57,14 @@ public class Database {
       e.printStackTrace();
     }
   }
-  
+
   public void leaveInstance(long player_id, long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String update_freespot = "Update Instance set free_spots=free_spots+1 where instance_id="+channel_id;
+      String update_freespot = "Update Instance set free_spots=free_spots+1 where instance_id="
+          + channel_id;
       statement.executeUpdate(update_freespot);
-      this.deletePlays(player_id,channel_id);
+      this.deletePlays(player_id, channel_id);
       System.out.println("player left instance");
     }
     catch (SQLException e) {
@@ -69,39 +72,41 @@ public class Database {
       e.printStackTrace();
     }
   }
-  
-  public void createPlays(long player_id,long channel_id) {
+
+  public void createPlays(long player_id, long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "INSERT IGNORE INTO Plays (player_id,instance_id)" + " Values ("
-          + player_id + ", " + channel_id+")";
+      String command = "INSERT IGNORE INTO Plays (player_id,instance_id)" + " Values (" + player_id
+          + ", " + channel_id + ")";
       statement.executeUpdate(command);
-      System.out.println("Created Plays for "+player_id+" in "+channel_id);
+      System.out.println("Created Plays for " + player_id + " in " + channel_id);
     }
     catch (SQLException e) {
-      System.out.println("could not reated Plays for "+player_id+" in "+channel_id);
+      System.out.println("could not reated Plays for " + player_id + " in " + channel_id);
       e.printStackTrace();
     }
   }
-  
-  public void deletePlays(long player_id,long channel_id) {
+
+  public void deletePlays(long player_id, long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Delete from Plays where instance_id="+channel_id +" and player_id="+player_id;
+      String command = "Delete from Plays where instance_id=" + channel_id + " and player_id="
+          + player_id;
       statement.executeUpdate(command);
-      System.out.println("deleted Plays for "+player_id+" in "+channel_id);
+      System.out.println("deleted Plays for " + player_id + " in " + channel_id);
     }
     catch (SQLException e) {
-      System.out.println("could not delte Plays for "+player_id+" in "+channel_id);
+      System.out.println("could not delte Plays for " + player_id + " in " + channel_id);
       e.printStackTrace();
     }
   }
-  
-  public void createInvite(long sender, long receiver, long channel_id,String server_name) {
+
+  public void createInvite(long sender, long receiver, long channel_id, String server_name) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "INSERT IGNORE INTO Invite (sender,receiver,instance_id,server_name)" + " Values ("
-          + sender + ", " + receiver + ", " + channel_id +" , '"+server_name+ "')";
+      String command = "INSERT IGNORE INTO Invite (sender,receiver,instance_id,server_name)"
+          + " Values (" + sender + ", " + receiver + ", " + channel_id + " , '" + server_name
+          + "')";
       statement.executeUpdate(command);
       System.out.println("Created invite from to " + channel_id);
     }
@@ -110,7 +115,7 @@ public class Database {
       e.printStackTrace();
     }
   }
-  
+
   public void createInstance(String privacy, String game_id, int freespot, long channel_id,
       String name) {
     try {
@@ -123,8 +128,9 @@ public class Database {
         visibility = "true";
       }
 
-      String command = "INSERT INTO Instance (instance_id,free_spots,game_id,public,instance_name,started)" + " Values ("
-          + channel_id + ", " + freespot + ", " + game_id + ", " + visibility +",'"+name+"',false)";
+      String command = "INSERT INTO Instance (instance_id,free_spots,game_id,public,instance_name,started)"
+          + " Values (" + channel_id + ", " + freespot + ", " + game_id + ", " + visibility + ",'"
+          + name + "',false)";
       statement.executeUpdate(command);
       System.out.println("Created instance in database: " + name);
     }
@@ -137,21 +143,21 @@ public class Database {
   public void deleteInstance(long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
-      statement.execute("DELETE FROM Invite WHERE instance_id="+channel_id);
-      String command = "Delete from Instance where instance_id="+channel_id;
+      statement.execute("DELETE FROM Invite WHERE instance_id=" + channel_id);
+      String command = "Delete from Instance where instance_id=" + channel_id;
       statement.executeUpdate(command);
-      System.out.println("Deleted instance "+channel_id);
+      System.out.println("Deleted instance " + channel_id);
     }
     catch (SQLException e) {
-      System.out.println("Error when deleting instance "+ channel_id);
+      System.out.println("Error when deleting instance " + channel_id);
       e.printStackTrace();
     }
   }
-  
+
   public String getIDbyNameGameType(String gametype) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select game_id from GameType where name='" + gametype+"'";
+      String command = "Select game_id from GameType where name='" + gametype + "'";
       ResultSet result = statement.executeQuery(command);
       String gameid = "invalid gametype";
       while (result.next()) {
@@ -166,24 +172,24 @@ public class Database {
       return "no id";
     }
   }
-  
+
   public ArrayList<ArrayList<String>> getInvites(long player_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select * from Invite inner join Instance on "
-          + "Invite.instance_id=Instance.instance_id where receiver="+player_id;
+      String command = "Select * from ((Invite inner join Instance on "
+          + "Invite.instance_id=Instance.instance_id) INNER JOIN Player ON Invite.sender = Player.player_id) where receiver=" + player_id;
       ResultSet result = statement.executeQuery(command);
-      ArrayList<ArrayList<String>> invites=new ArrayList<ArrayList<String>>();
+      ArrayList<ArrayList<String>> invites = new ArrayList<ArrayList<String>>();
       while (result.next()) {
-        invites.add((ArrayList<String>) 
-            Arrays.asList(
-                result.getString("sender"),
-                result.getString("instance_name"),
-                result.getString("server_name")));
-        }
-      if(invites.size()==0) {
+        ArrayList<String> toAdd = new ArrayList<String>();
+        toAdd.add(result.getString("nickname"));
+        toAdd.add(result.getString("instance_name"));
+        toAdd.add(result.getString("server_name"));
+        invites.add(toAdd);
+      }
+      if (invites.size() == 0) {
         return null;
-        }
+      }
       return invites;
     }
     catch (SQLException e) {
@@ -192,19 +198,19 @@ public class Database {
       return null;
     }
   }
-  
-  public ArrayList<Long> getInstanceIDbyName(String name){
+
+  public ArrayList<Long> getInstanceIDbyName(String name) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select instance_id from Instance where instance_name='" + name+"'";
+      String command = "Select instance_id from Instance where instance_name='" + name + "'";
       ResultSet result = statement.executeQuery(command);
-      ArrayList<Long> ids=new ArrayList<Long>();
+      ArrayList<Long> ids = new ArrayList<Long>();
       while (result.next()) {
         ids.add(result.getLong("instance_id"));
       }
-      if(ids.size()==0) {
+      if (ids.size() == 0) {
         return null;
-        }
+      }
       return ids;
     }
     catch (SQLException e) {
@@ -214,20 +220,20 @@ public class Database {
     }
   }
 
-  public ArrayList<String> getRecordInstance(long channel_id){
+  public ArrayList<String> getRecordInstance(long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select * from Instance where instance_id="+channel_id;
+      String command = "Select * from Instance where instance_id=" + channel_id;
       ResultSet result = statement.executeQuery(command);
-      ArrayList<String> record=new ArrayList<String>();
+      ArrayList<String> record = new ArrayList<String>();
       while (result.next()) {
-        for(int i=1;i<7;i++) {
-        record.add(result.getString(i));
+        for (int i = 1; i < 7; i++) {
+          record.add(result.getString(i));
         }
-        }
-      if(record.size()==0) {
+      }
+      if (record.size() == 0) {
         return null;
-        }
+      }
       return record;
     }
     catch (SQLException e) {
@@ -236,22 +242,23 @@ public class Database {
       return null;
     }
   }
-  
-  public ArrayList<String> getRecordInvite(long receiver,long channel_id){
+
+  public ArrayList<String> getRecordInvite(long receiver, long channel_id) {
 
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select * from Invite where instance_id="+channel_id+" and receiver="+receiver;
+      String command = "Select * from Invite where instance_id=" + channel_id + " and receiver="
+          + receiver;
       ResultSet result = statement.executeQuery(command);
-      ArrayList<String> record=new ArrayList<String>();
+      ArrayList<String> record = new ArrayList<String>();
       while (result.next()) {
-        for(int i=1;i<5;i++) {
-        record.add(result.getString(i));
+        for (int i = 1; i < 5; i++) {
+          record.add(result.getString(i));
         }
-        }
-      if(record.size()==0) {
+      }
+      if (record.size() == 0) {
         return null;
-        }
+      }
       return record;
     }
     catch (SQLException e) {
@@ -260,7 +267,7 @@ public class Database {
       return null;
     }
   }
-  
+
   public void updatePlayers(JDA api) throws SQLException {
     ArrayList<String> member_id = this.getFieldFromTable("Player", "player_id");
 
@@ -342,15 +349,17 @@ public class Database {
       return null;
     }
   }
-  
+
   public int getNumMembers(long instanceID) {
     try {
       Statement statement = conn.createStatement();
-      ResultSet num = statement.executeQuery("SELECT count(*) FROM Plays WHERE instance_id = "+instanceID+" GROUP BY instance_id");
+      ResultSet num = statement.executeQuery(
+          "SELECT count(*) FROM Plays WHERE instance_id = " + instanceID + " GROUP BY instance_id");
       num.next();
       return num.getInt(1);
-    }catch(SQLException e) {
-      if(e.getMessage().contains("empty result set")) {
+    }
+    catch (SQLException e) {
+      if (e.getMessage().contains("empty result set")) {
         System.out.println("Empty result set");
         return 0;
       }

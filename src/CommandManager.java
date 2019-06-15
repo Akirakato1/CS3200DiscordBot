@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 
+import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 // Abstracted functionality for a command manager.
@@ -64,6 +65,14 @@ public abstract class CommandManager {
       message = message.substring(2);
     }
     return message;
+  }
+  
+  public void sendPrivateMessage(User user, String content) {
+    // openPrivateChannel provides a RestAction<PrivateChannel>
+    // which means it supplies you with the resulting channel
+    user.openPrivateChannel().queue((channel) -> {
+      channel.sendMessage(content).queue();
+    });
   }
   
   //protected String

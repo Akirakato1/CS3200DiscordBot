@@ -60,7 +60,7 @@ public class GeneralCommandManager extends CommandManager{
       ArrayList<ArrayList<String>> invites=this.db.getInvites(commandEvent.getAuthor().getIdLong());
       String message="";
       if(invites==null) {
-        channel.sendMessage("No invites, go make friends").queue();
+        sendPrivateMessage(commandEvent.getAuthor(), "No invites, go make friends");
         return;
       }
       for(ArrayList<String> invite: invites) {

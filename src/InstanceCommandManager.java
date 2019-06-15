@@ -49,7 +49,7 @@ public class InstanceCommandManager extends CommandManager{
         // TODO: Add the invite to the SQL database.
         sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName);
         db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(),
-            channel.getIdLong());
+            channel.getIdLong(), channel.getGuild().getName());
       }
     }
     else if (command.equals("leave")) {
@@ -85,12 +85,13 @@ public class InstanceCommandManager extends CommandManager{
       channel.sendMessage(help(arguments)).queue();
     }
   }
-
-  public void sendPrivateMessage(User user, String content) {
-    // openPrivateChannel provides a RestAction<PrivateChannel>
-    // which means it supplies you with the resulting channel
-    user.openPrivateChannel().queue((channel) -> {
-      channel.sendMessage(content).queue();
-    });
+  /*
+  public void instanceMessage(MessageReceivedEvent event) {
+    if(gameThreads.containsKey(event.getChannel().getIdLong())) {
+      // It's a game event!
+      
+    }
   }
+   */
+  
 }
