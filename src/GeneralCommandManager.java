@@ -20,9 +20,20 @@ public class GeneralCommandManager {
 
   // Process a command. Assume the command begins with the proper delimiter.
   public void processCommand(MessageReceivedEvent commandEvent) {
+    System.out.println("Recieved general command");
+    String content = commandEvent.getMessage().getContentStripped();
+    String command = content.substring(1);
+    if(content.contains(":")) {
+      command = command.substring(0, content.indexOf(":")-1);
+    }
+    String[] arguments = content.substring(content.indexOf(":")+1).split(",");
+    // Strip whitespace from argument sides
+    for(int i = 0; i < arguments.length; i++) {
+      arguments[i] = arguments[i].strip();
+    }
+    
     String[] words = commandEvent.getMessage().getContentStripped().split(" ");
     // Determine the command.
-    String command = words[0].substring(1);
     TextChannel channel = commandEvent.getTextChannel();
 
     // List all the channels on the server.
@@ -37,13 +48,13 @@ public class GeneralCommandManager {
       channel.sendMessage("Channel names: " + channelnames).queue();
     }
 
-    if (command.equals("createchannel")) {
+    else if (command.equals("createinstance")) {
       // Create a new channel
-      String channelname = words[1];
-      for (int i = 2; i < words.length; i++) {
-        channelname = channelname + "-" + words[i];
-      }
-
+      // !createinstance: public | private, 
+      String channelname = arguments[0];
+      
+      
+      // public | private, game_id (name), open slots, channel name
       String parent = "Testing Channels";
 
       List<Channel> channels = commandEvent.getGuild().getChannels();
@@ -67,6 +78,7 @@ public class GeneralCommandManager {
         ArrayList<Permission> publicDeny = new ArrayList<Permission>();
         publicDeny.addAll(Permission.getPermissions(Permission.ALL_TEXT_PERMISSIONS));
         publicDeny.add(Permission.VIEW_CHANNEL);
+        publicDeny.add(Permission.ADMINISTRATOR);
         channelaction.addPermissionOverride(commandEvent.getGuild().getPublicRole(),
             new ArrayList<Permission>(), publicDeny);
         // Set author permissions
@@ -101,6 +113,14 @@ public class GeneralCommandManager {
       poa.setAllow(permissions);
       poa.queue();
       */
+    }
+    else if (command.contentEquals("help")) {
+      ArrayList<String[]> commands = new ArrayList<String[]>();
+      commands.add(new String[]{"!channelnames"});
+      commands.add(new String[]{"!createinstance", "[public | private]", ""});
+      if(arguments.length == 0) {
+        channel.sendMessage("!channelnames \n!createinstance \n!join");
+      }
     }
 
   }

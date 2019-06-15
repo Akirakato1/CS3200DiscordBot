@@ -18,6 +18,7 @@ public class InstanceCommandManager {
   
   // Process a command. Assume the command begins with the proper delimiter.
   public void processCommand(MessageReceivedEvent commandEvent) {
+    System.out.println("Recieved instance command");
     String[] words = commandEvent.getMessage().getContentStripped().split(" ");
     // Determine the command.
     String command = words[0].substring(1);
@@ -34,15 +35,19 @@ public class InstanceCommandManager {
     }
     else if (command.equals("leave")) {
       // Leave the instance
-      if (commandEvent.getTextChannel().getMembers().size() == 1) {
+      System.out.println("Members left before leaving: "+commandEvent.getTextChannel().getMembers().size());
+      if (commandEvent.getTextChannel().getMembers().size() <= 2) {
+        System.out.println("Deleting channel");
         // This is the last member. Delete the channel.
-        commandEvent.getTextChannel().delete();
+        commandEvent.getTextChannel().delete().queue();
       } else {
+        System.out.println("Removing permissions");
         // Not the last member. Simply remove permissions.
         ArrayList<Permission> permissions = new ArrayList<Permission>();
         permissions.add(Permission.MESSAGE_READ);
         permissions.add(Permission.MESSAGE_WRITE);
         permissions.add(Permission.VIEW_CHANNEL);
+        permissions.add(Permission.ADMINISTRATOR);
         PermissionOverrideAction override = commandEvent.getTextChannel()
             .createPermissionOverride(commandEvent.getMember());
         override.setDeny(permissions);

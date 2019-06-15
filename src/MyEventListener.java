@@ -41,8 +41,10 @@ public class MyEventListener extends ListenerAdapter{
     if(content[0].startsWith("!")) {
       // Assume it is a command, redirect to appropriate command manager.
       String category = event.getTextChannel().getParent().getName();
-      if(category.equals("Testing channels") || category.equals("Games")) {
+      System.out.println(category);
+      if(category.equals("Testing Channels") || category.equals("Games")) {
         // It is an instance message.
+        System.out.println("Redirecting to instance");
         icm.processCommand(event);
       }else {
         // It is not an instance message.
