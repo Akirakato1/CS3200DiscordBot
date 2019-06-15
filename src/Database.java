@@ -76,6 +76,19 @@ public class Database {
     }
   }
 
+  public void deleteInstance(long channel_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Delete from Instance where instance_id="+channel_id;
+      statement.executeUpdate(command);
+      System.out.println("Deleted instance "+channel_id);
+    }
+    catch (SQLException e) {
+      System.out.println("Error when deleting instance "+ channel_id);
+      e.printStackTrace();
+    }
+  }
+  
   public String getIDbyNameGameType(String gametype) {
     try {
       Statement statement = this.conn.createStatement();
@@ -92,6 +105,27 @@ public class Database {
       System.out.println("Error when retrieving gametype_id");
       e.printStackTrace();
       return "no id";
+    }
+  }
+  
+  public ArrayList<Long> getInstanceIDbyName(String name){
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select instance_id from Instance where instance_name='" + name+"'";
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<Long> ids=new ArrayList<Long>();
+      while (result.next()) {
+        ids.add(result.getLong("instance_id"));
+      }
+      if(ids.size()==0) {
+        return null;
+        }
+      return ids;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving gametype_id");
+      e.printStackTrace();
+      return null;
     }
   }
 

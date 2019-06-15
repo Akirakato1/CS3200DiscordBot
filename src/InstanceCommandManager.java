@@ -2,19 +2,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Channel;
 import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
 // Handles commands from Instance threads.
 public class InstanceCommandManager {
-  /*
+  
   Database db;
-  public GeneralCommandManager(Database db) {
+  public InstanceCommandManager(Database db) {
     this.db = db;
   }
-  */
   
   // Process a command. Assume the command begins with the proper delimiter.
   public void processCommand(MessageReceivedEvent commandEvent) {
@@ -22,6 +23,7 @@ public class InstanceCommandManager {
     String[] words = commandEvent.getMessage().getContentStripped().split(" ");
     // Determine the command.
     String command = words[0].substring(1);
+    TextChannel channel=commandEvent.getTextChannel();
 
     if (command.equals("invite")) {
       // Invite command.
@@ -39,6 +41,7 @@ public class InstanceCommandManager {
       if (commandEvent.getTextChannel().getMembers().size() <= 3) {
         System.out.println("Deleting channel");
         // This is the last member. Delete the channel.
+        db.deleteInstance(channel.getIdLong());
         commandEvent.getTextChannel().delete().queue();
       } else {
         System.out.println("Removing permissions");

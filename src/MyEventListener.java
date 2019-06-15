@@ -18,7 +18,7 @@ public class MyEventListener extends ListenerAdapter{
   
   public MyEventListener(Database db) {
     this.gcm = new GeneralCommandManager(db);
-    this.icm = new InstanceCommandManager();
+    this.icm = new InstanceCommandManager(db);
     this.db=db;
   }
   

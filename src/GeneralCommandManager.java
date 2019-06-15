@@ -19,7 +19,7 @@ public class GeneralCommandManager {
     commands.add(new String[] {"!help", "context(optional)"});
     commands.add(new String[]{"!channelnames"});
     commands.add(new String[]{"!createinstance", "[public | private]", "gametype", "capacity", "name"});
-    
+    commands.add(new String[]{"!join","[instance name]"});
     this.db = db;
   }
 
@@ -150,14 +150,36 @@ public class GeneralCommandManager {
       }
     }
     else if (command.contentEquals("join")) {
+      
+      ArrayList<Long> ids=this.db.getInstanceIDbyName(arguments[0]);
+      List<Channel> channels=channel.getGuild().getChannels();
+      ArrayList<Long> channel_ids_guild=new ArrayList<Long>();
+      long channel_id=0;
+      if(ids==null) {
+        channel.sendMessage("invalid instance name").queue();
+        return;
+      }
+      
+      for(int i=0;i<channels.size();i++) {
+        channel_ids_guild.add(channels.get(i).getIdLong());
+      }
+      
+      for(long id:ids) {
+        if(channel_ids_guild.contains(id)) {
+          channel_id=id;
+          break;
+        }
+      }
+      
+      
       // Request to join an instance
 
       // TODO: Check for permission to join instance
 
       // Join the channel
       // TODO: Search Database for channel id using name
-      /*
-      TextChannel tc = commandEvent.getGuild().getTextChannelById(id);
+      
+      TextChannel tc = commandEvent.getGuild().getTextChannelById(channel_id);
       PermissionOverrideAction poa = tc.createPermissionOverride(commandEvent.getMember());
       ArrayList<Permission> permissions = new ArrayList<Permission>();
       permissions.add(Permission.MESSAGE_READ);
@@ -165,12 +187,8 @@ public class GeneralCommandManager {
       permissions.add(Permission.VIEW_CHANNEL);
       poa.setAllow(permissions);
       poa.queue();
-      */
     }
     else if (command.contentEquals("help")) {
-      
-      
-      
       String message = "";
       if(arguments.length == 0) {
         for(String[] function : commands) {
