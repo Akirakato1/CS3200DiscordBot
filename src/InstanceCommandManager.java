@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import net.dv8tion.jda.core.Permission;
@@ -10,17 +11,17 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
 // Handles commands from Instance threads.
-public class InstanceCommandManager{
-  ArrayList<String[]> commands;
-  Database db;
+public class InstanceCommandManager extends CommandManager{
+  
+  ArrayList<CommandManager> gameManagers; // gameManagers by GameID
+  HashMap<Long, Integer> gameThreads; // Maps threads that have started a game to the corresponding GameID
 
   public InstanceCommandManager(Database db) {
-    this.commands = new ArrayList<String[]>();
+    super(db);
     commands.add(new String[] { "!help", "context(optional)" });
     commands.add(new String[] { "!invite", "[\\@recipient(s)]" });
     commands.add(new String[] { "!leave" });
     commands.add(new String[] { "!start" });
-    this.db = db;
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -79,6 +80,9 @@ public class InstanceCommandManager{
     }
     else if (command.equals("start")) {
       // TODO: Implement database functions and game functions
+    }
+    else if(command.equals("help")) {
+      channel.sendMessage(help(arguments)).queue();
     }
   }
 
