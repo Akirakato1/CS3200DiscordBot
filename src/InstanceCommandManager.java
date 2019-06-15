@@ -49,7 +49,7 @@ public class InstanceCommandManager extends CommandManager{
         // TODO: Add the invite to the SQL database.
         sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName);
         db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(),
-            channel.getIdLong(), channel.getGuild().getName());
+            channel.getIdLong());
       }
     }
     else if (command.equals("leave")) {

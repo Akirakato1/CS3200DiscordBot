@@ -4,6 +4,7 @@ import java.util.List;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Channel;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
@@ -22,6 +23,7 @@ public class GeneralCommandManager extends CommandManager{
         new String[] { "createinstance", "[public | private]", "gametype", "capacity", "name" });
     commands.add(new String[] { "join", "[instance name]" });
     commands.add(new String[] { "myinvites" });
+    commands.add(new String[] { "instances" });
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -64,9 +66,32 @@ public class GeneralCommandManager extends CommandManager{
         return;
       }
       for(ArrayList<String> invite: invites) {
-        message=message+"\nAn invitation from "+invite.get(0)+" to join instance "+invite.get(1)+" in server "+ invite.get(2);
+        Guild guild=commandEvent.getJDA().getGuildById(Long.parseLong(invite.get(1)));
+        TextChannel channel_invite=guild.getTextChannelById(invite.get(2));
+        message=message+"\nAn invitation from "+invite.get(0)+" to join instance "+
+        channel_invite.getName()+" in server "+ guild.getName();
       }
       sendPrivateMessage(commandEvent.getAuthor(),message);
+      return;
+    }
+    else if (command.equals("instances")) {
+      ArrayList<ArrayList<String>> instances=this.db.getInstances(commandEvent.getGuild().getIdLong());
+      String message="";
+      if(instances==null) {
+        channel.sendMessage("No Instances Up right now").queue();
+        return;
+      }
+      for(ArrayList<String> instance: instances) {
+        Guild guild=commandEvent.getGuild();
+        TextChannel textc=guild.getTextChannelById(instance.get(0));
+        String freespots=instance.get(1);
+        if(Integer.parseInt(instance.get(1))<0) {
+          freespots="infinte";
+        }
+        message=message+"\n Instance name: "+textc.getName()+" Free spots: "+freespots
+        +" Public? "+instance.get(2)+" Started? "+instance.get(3);
+      }
+      channel.sendMessage(message).queue();
       return;
     }
     else if (command.equals("createinstance")) {
@@ -165,7 +190,7 @@ public class GeneralCommandManager extends CommandManager{
 
         // Apply it to the database
 
-        db.createInstance(privacy, gameid, capacity, newChannel.getIdLong(), channelname);
+        db.createInstance(privacy, gameid, capacity, newChannel.getIdLong(), commandEvent.getGuild().getIdLong(),channelname);
         db.joinInstance(commandEvent.getAuthor().getIdLong(), newChannel.getIdLong());
       }
       else {

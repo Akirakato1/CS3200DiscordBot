@@ -101,12 +101,11 @@ public class Database {
     }
   }
 
-  public void createInvite(long sender, long receiver, long channel_id, String server_name) {
+  public void createInvite(long sender, long receiver, long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "INSERT IGNORE INTO Invite (sender,receiver,instance_id,server_name)"
-          + " Values (" + sender + ", " + receiver + ", " + channel_id + " , '" + server_name
-          + "')";
+      String command = "INSERT IGNORE INTO Invite (sender,receiver,instance_id)"
+          + " Values (" + sender + ", " + receiver + ", " + channel_id + ")";
       statement.executeUpdate(command);
       System.out.println("Created invite from to " + channel_id);
     }
@@ -117,7 +116,7 @@ public class Database {
   }
 
   public void createInstance(String privacy, String game_id, int freespot, long channel_id,
-      String name) {
+      long server_id,String instance_name) {
     try {
       Statement statement = this.conn.createStatement();
       String visibility;
@@ -128,14 +127,13 @@ public class Database {
         visibility = "true";
       }
 
-      String command = "INSERT INTO Instance (instance_id,free_spots,game_id,public,instance_name,started)"
-          + " Values (" + channel_id + ", " + freespot + ", " + game_id + ", " + visibility + ",'"
-          + name + "',false)";
+      String command = "INSERT INTO Instance (instance_id,free_spots,game_id,public,started,server_id,instance_name)"
+          + " Values (" + channel_id + ", " + freespot + ", " + game_id + ", " + visibility +", false ,"+server_id+", '"+instance_name+"')";
       statement.executeUpdate(command);
-      System.out.println("Created instance in database: " + name);
+      System.out.println("Created instance in database: " + instance_name);
     }
     catch (SQLException e) {
-      System.out.println("could not create instance in database: " + name);
+      System.out.println("could not create instance in database: " + instance_name);
       e.printStackTrace();
     }
   }
@@ -183,14 +181,40 @@ public class Database {
       while (result.next()) {
         ArrayList<String> toAdd = new ArrayList<String>();
         toAdd.add(result.getString("nickname"));
-        toAdd.add(result.getString("instance_name"));
-        toAdd.add(result.getString("server_name"));
+        toAdd.add(result.getString("server_id"));
+        toAdd.add(result.getString("instance_id"));
         invites.add(toAdd);
       }
       if (invites.size() == 0) {
         return null;
       }
       return invites;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving instance record");
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
+  public ArrayList<ArrayList<String>> getInstances(long server_id){
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select * from Instance where server_id='"+server_id+"'";
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<ArrayList<String>> instances = new ArrayList<ArrayList<String>>();
+      while (result.next()) {
+        ArrayList<String> toAdd = new ArrayList<String>();
+        toAdd.add(result.getString("instance_id"));
+        toAdd.add(result.getString("free_spots"));
+        toAdd.add(result.getString("public"));
+        toAdd.add(result.getString("started"));
+        instances.add(toAdd);
+      }
+      if (instances.size() == 0) {
+        return null;
+      }
+      return instances;
     }
     catch (SQLException e) {
       System.out.println("Error when retrieving instance record");
@@ -227,7 +251,7 @@ public class Database {
       ResultSet result = statement.executeQuery(command);
       ArrayList<String> record = new ArrayList<String>();
       while (result.next()) {
-        for (int i = 1; i < 7; i++) {
+        for (int i = 1; i < 8; i++) {
           record.add(result.getString(i));
         }
       }
@@ -247,12 +271,12 @@ public class Database {
 
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select * from Invite where instance_id=" + channel_id + " and receiver="
-          + receiver;
+      String command = "Select * from Invite inner join Instance on Invite.instance_id=Instance.instance_id "
+          + "where Invite.instance_id=" + channel_id + " and receiver="+ receiver;
       ResultSet result = statement.executeQuery(command);
       ArrayList<String> record = new ArrayList<String>();
       while (result.next()) {
-        for (int i = 1; i < 5; i++) {
+        for (int i = 1; i < 4; i++) {
           record.add(result.getString(i));
         }
       }
