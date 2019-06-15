@@ -43,7 +43,7 @@ public class Database {
     try {
       Statement statement = this.conn.createStatement();
       String update_freespot = "Update Instance set free_spots=free_spots-1 where instance_id="+channel_id;
-      String delete_invite = "Delete from Invite where instance_id="+channel_id+"and receiver="+player_id;
+      String delete_invite = "Delete from Invite where instance_id="+channel_id+" and receiver="+player_id;
       statement.executeUpdate(update_freespot);
       statement.executeUpdate(delete_invite);
       this.createPlays(player_id,channel_id);
@@ -136,6 +136,7 @@ public class Database {
   public void deleteInstance(long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
+      statement.execute("DELETE FROM Invite WHERE instance_id="+channel_id);
       String command = "Delete from Instance where instance_id="+channel_id;
       statement.executeUpdate(command);
       System.out.println("Deleted instance "+channel_id);
@@ -213,7 +214,7 @@ public class Database {
 
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select * from Instance where instance_id="+channel_id+"and receiver="+receiver;
+      String command = "Select * from Invite where instance_id="+channel_id+" and receiver="+receiver;
       ResultSet result = statement.executeQuery(command);
       ArrayList<String> record=new ArrayList<String>();
       while (result.next()) {
@@ -313,6 +314,21 @@ public class Database {
       e.printStackTrace();
       return null;
     }
+  }
+  
+  public int getNumMembers(long instanceID) {
+    try {
+      Statement statement = conn.createStatement();
+      ResultSet num = statement.executeQuery("SELECT count(*) FROM Plays WHERE instance_id = "+instanceID+" GROUP BY instance_id");
+      num.next();
+      return num.getInt(1);
+    }catch(SQLException e) {
+      if(e.getMessage().contains("empty result set")) {
+        System.out.println("Empty result set");
+        return 0;
+      }
+    }
+    return -1;
   }
 
   public void closeConnection() throws SQLException {

@@ -10,7 +10,7 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
 // Handles commands from Instance threads.
-public class InstanceCommandManager {
+public class InstanceCommandManager{
   ArrayList<String[]> commands;
   Database db;
 
@@ -56,7 +56,8 @@ public class InstanceCommandManager {
       System.out.println(
           "Members left before leaving: " + commandEvent.getTextChannel().getMembers().size());
       db.leaveInstance(commandEvent.getAuthor().getIdLong(), commandEvent.getChannel().getIdLong());
-      if (commandEvent.getTextChannel().getMembers().size() <= 3) {
+      
+      if (db.getNumMembers(commandEvent.getChannel().getIdLong())== 0) {
         System.out.println("Deleting channel");
         // This is the last member. Delete the channel.
         db.deleteInstance(channel.getIdLong());
@@ -71,7 +72,7 @@ public class InstanceCommandManager {
         permissions.add(Permission.VIEW_CHANNEL);
         permissions.add(Permission.ADMINISTRATOR);
         PermissionOverrideAction override = commandEvent.getTextChannel()
-            .createPermissionOverride(commandEvent.getMember());
+            .putPermissionOverride(commandEvent.getMember());
         override.setDeny(permissions);
         override.queue();
       }

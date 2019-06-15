@@ -12,18 +12,15 @@ import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
 // Handles commands from the General thread(s).
-public class GeneralCommandManager {
-  ArrayList<String[]> commands;
-  Database db;
+public class GeneralCommandManager extends CommandManager{
 
   public GeneralCommandManager(Database db) {
-    this.commands = new ArrayList<String[]>();
-    commands.add(new String[] { "!help", "context(optional)" });
-    commands.add(new String[] { "!channelnames" });
+    super(db);
+    commands.add(new String[] { "help", "context(optional)" });
+    commands.add(new String[] { "channelnames" });
     commands.add(
-        new String[] { "!createinstance", "[public | private]", "gametype", "capacity", "name" });
-    commands.add(new String[] { "!join", "[instance name]" });
-    this.db = db;
+        new String[] { "createinstance", "[public | private]", "gametype", "capacity", "name" });
+    commands.add(new String[] { "join", "[instance name]" });
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -34,7 +31,10 @@ public class GeneralCommandManager {
     if (content.contains(":")) {
       command = command.substring(0, content.indexOf(":") - 1);
     }
-    String[] arguments = content.substring(content.indexOf(":") + 1).split(",");
+    String[] arguments = new String[] {};
+    if(content.length()-command.length()>1) {
+      arguments = content.substring(command.length() + 2).split(",");
+    }
     // Strip whitespace from argument sides
     for (int i = 0; i < arguments.length; i++) {
       arguments[i] = arguments[i].trim();
@@ -58,6 +58,11 @@ public class GeneralCommandManager {
 
     else if (command.equals("createinstance")) {
       // Create a new channel
+      if(arguments.length != 4) {
+        channel.sendMessage("Error: createinstance expects 4 arguments.").queue();
+        return;
+      }
+      
       // !createinstance: public | private,
 
       // Check for public/private permissions
@@ -72,7 +77,7 @@ public class GeneralCommandManager {
       }
       else {
         String description = arguments[0] + " should be either \"public\" or \"private\"";
-        channel.sendMessage(errorMessage(command, arguments, 0, description));
+        channel.sendMessage(errorMessage(command, arguments, 0, description)).queue();
         return;
       }
 
@@ -82,12 +87,12 @@ public class GeneralCommandManager {
 
       if (gameid.equals("invalid gametype")) {
         String description = arguments[1] + " is not a valid gametype.";
-        channel.sendMessage(errorMessage(command, arguments, 1, description));
+        channel.sendMessage(errorMessage(command, arguments, 1, description)).queue();
         return;
       }
       else if (gameid.equals("no id")) {
         String description = "Something has gone terribly wrong with the gametype query. Does the gametype contain quotes?";
-        channel.sendMessage(errorMessage(command, arguments, 1, description));
+        channel.sendMessage(errorMessage(command, arguments, 1, description)).queue();
         return;
       }
 
@@ -97,7 +102,7 @@ public class GeneralCommandManager {
       }
       catch (NumberFormatException e) {
         String description = arguments[2] + " is not an integer.";
-        channel.sendMessage(errorMessage(command, arguments, 2, description));
+        channel.sendMessage(errorMessage(command, arguments, 2, description)).queue();
         return;
       }
 
@@ -143,7 +148,7 @@ public class GeneralCommandManager {
             new ArrayList<Permission>());
 
         Channel newChannel = channelaction.complete();
-        channel.sendMessage("Created channel: " + channelname);
+        channel.sendMessage("Created channel: " + channelname).queue();
 
         // Apply it to the database
 
@@ -194,7 +199,7 @@ public class GeneralCommandManager {
       ArrayList<String> target_invite = db.getRecordInvite(commandEvent.getAuthor().getIdLong(),
           channel_id);
 
-      if (target_instance_record.get(6).equals("1")) {
+      if (target_instance_record.get(5).equals("1")) {
         channel.sendMessage("game already started you loser").queue();
         return;
       }
@@ -207,7 +212,7 @@ public class GeneralCommandManager {
         }
       }
 
-      if (Integer.parseInt(target_instance_record.get(2)) <= 0) {
+      if (Integer.parseInt(target_instance_record.get(2)) == 0) {
         channel.sendMessage("Not enough free spot for this instance ").queue();
         return;
       }
@@ -234,36 +239,12 @@ public class GeneralCommandManager {
       poa.queue();
     }
     else if (command.contentEquals("help")) {
-      String message = "";
-      if (arguments.length == 0) {
-        for (String[] function : commands) {
-          message += ", !" + function[0];
-        }
-        message = message.substring(2);
-      }
+      channel.sendMessage(help(arguments)).queue();
     }
     else {
       // Invalid command, commence suggestions?
+      channel.sendMessage("Invalid command. Type !help for a list of commands.").queue();
     }
 
-  }
-
-  private String errorMessage(String command, String[] arguments, int invalid, String description) {
-    String message = "Error in !" + command + ": ";
-    for (int i = 0; i < arguments.length; i++) {
-      if (i > 0) {
-        message = message.concat(", ");
-      }
-      if (i == invalid) {
-        message = message.concat("```diff ");
-      }
-      message = message.concat(arguments[i]);
-      if (i == invalid) {
-        message = message.concat("```");
-      }
-    }
-    message = message.concat("\n" + description);
-
-    return message;
   }
 }

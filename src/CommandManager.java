@@ -65,4 +65,6 @@ public abstract class CommandManager {
     }
     return message;
   }
+  
+  //protected String
 }
