@@ -37,8 +37,58 @@ public class Database {
       return;
     }
   }
+
+  public void createInvite(String sender, String receiver, String channel_id) {
+    try {
+      Statement statement=this.conn.createStatement();
+      String command="INSERT IGNORE INTO Invite (sender,receiver,instance_id)"
+          + " Values ("+sender+", "+receiver+", "+channel_id+")";
+      statement.executeUpdate(command);
+      System.out.println("Created invite from to "+channel_id);
+    } catch (SQLException e) {
+      System.out.println("could not create invite for "+channel_id);
+      e.printStackTrace();
+    }
+  }
   
+  public void  createInstance(String privacy,String game_id, int freespot,long channel_id,String name) throws SQLException {
+    try {
+    Statement statement=this.conn.createStatement();
+    String visibility;
+    if(privacy.equals("private")) {
+      visibility="false";
+    }
+    else {
+      visibility="true";
+    } 
+    
+    String command="INSERT INTO Instance (instance_id,free_spots,game_id,public)"
+        + " Values ("+channel_id+", "+freespot+", "+game_id+", "+visibility+")";
+    statement.executeUpdate(command);
+    System.out.println("Created instance in database: "+name);
+  } catch (SQLException e) {
+    System.out.println("could not create instance in database: " +name);
+    e.printStackTrace();
+  }
+  }
   
+  public String getIDbyNameGameType(String gametype){
+    try {
+      Statement statement=this.conn.createStatement();
+      String command="Select game_id from GameType where name="+gametype;
+      ResultSet result=statement.executeQuery(command);
+      String gameid="invalid gametype";
+      while(result.next()) {
+        gameid=result.getString("game_id");
+      }
+      System.out.println("Gametype: "+ gametype+ " has ID of: "+gameid);
+      return gameid;
+    } catch (SQLException e) {
+      System.out.println("Error when retrieving gametype_id");
+      e.printStackTrace();
+      return "no id";
+    }
+  }
   
   public void updatePlayers(JDA api) throws SQLException {
     ArrayList<String> member_id = this.getFieldFromTable("Player", "player_id");
