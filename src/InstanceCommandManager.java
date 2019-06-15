@@ -33,11 +33,13 @@ public class InstanceCommandManager {
       for (Member m : invited) {
         // TODO: Add the invite to the SQL database.
         sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName);
+        db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(), channel.getIdLong());
       }
     }
     else if (command.equals("leave")) {
       // Leave the instance
       System.out.println("Members left before leaving: "+commandEvent.getTextChannel().getMembers().size());
+      db.leaveInstance(commandEvent.getAuthor().getIdLong(),commandEvent.getChannel().getIdLong());
       if (commandEvent.getTextChannel().getMembers().size() <= 3) {
         System.out.println("Deleting channel");
         // This is the last member. Delete the channel.

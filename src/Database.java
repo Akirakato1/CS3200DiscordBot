@@ -38,8 +38,65 @@ public class Database {
       return;
     }
   }
-
-  public void createInvite(String sender, String receiver, String channel_id) {
+  
+  public void joinInstance(long player_id,long channel_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String update_freespot = "Update Instance set free_spots=free_spots-1 where instance_id="+channel_id;
+      String delete_invite = "Delete from Invite where instance_id="+channel_id+"and receiver="+player_id;
+      statement.executeUpdate(update_freespot);
+      statement.executeUpdate(delete_invite);
+      this.createPlays(player_id,channel_id);
+      System.out.println("player joined instance");
+    }
+    catch (SQLException e) {
+      System.out.println("player could not join instance");
+      e.printStackTrace();
+    }
+  }
+  
+  public void leaveInstance(long player_id, long channel_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String update_freespot = "Update Instance set free_spots=free_spots+1 where instance_id="+channel_id;
+      statement.executeUpdate(update_freespot);
+      this.deletePlays(player_id,channel_id);
+      System.out.println("player left instance");
+    }
+    catch (SQLException e) {
+      System.out.println("player could not leave instance");
+      e.printStackTrace();
+    }
+  }
+  
+  public void createPlays(long player_id,long channel_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "INSERT IGNORE INTO Plays (player_id,instance_id)" + " Values ("
+          + player_id + ", " + channel_id+")";
+      statement.executeUpdate(command);
+      System.out.println("Created Plays for "+player_id+" in "+channel_id);
+    }
+    catch (SQLException e) {
+      System.out.println("could not reated Plays for "+player_id+" in "+channel_id);
+      e.printStackTrace();
+    }
+  }
+  
+  public void deletePlays(long player_id,long channel_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Delete from Plays where instance_id="+channel_id +" and player_id="+player_id;
+      statement.executeUpdate(command);
+      System.out.println("deleted Plays for "+player_id+" in "+channel_id);
+    }
+    catch (SQLException e) {
+      System.out.println("could not delte Plays for "+player_id+" in "+channel_id);
+      e.printStackTrace();
+    }
+  }
+  
+  public void createInvite(long sender, long receiver, long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
       String command = "INSERT IGNORE INTO Invite (sender,receiver,instance_id)" + " Values ("
@@ -52,7 +109,7 @@ public class Database {
       e.printStackTrace();
     }
   }
-
+  
   public void createInstance(String privacy, String game_id, int freespot, long channel_id,
       String name) {
     try {
@@ -65,8 +122,8 @@ public class Database {
         visibility = "true";
       }
 
-      String command = "INSERT INTO Instance (instance_id,free_spots,game_id,public)" + " Values ("
-          + channel_id + ", " + freespot + ", " + game_id + ", " + visibility + ")";
+      String command = "INSERT INTO Instance (instance_id,free_spots,game_id,public,instance_name,started)" + " Values ("
+          + channel_id + ", " + freespot + ", " + game_id + ", " + visibility +",'"+name+"',false)";
       statement.executeUpdate(command);
       System.out.println("Created instance in database: " + name);
     }
@@ -129,6 +186,53 @@ public class Database {
     }
   }
 
+  public ArrayList<String> getRecordInstance(long channel_id){
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select * from Instance where instance_id="+channel_id;
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<String> record=new ArrayList<String>();
+      while (result.next()) {
+        for(int i=1;i<7;i++) {
+        record.add(result.getString(i));
+        }
+        }
+      if(record.size()==0) {
+        return null;
+        }
+      return record;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving instance record");
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
+  public ArrayList<String> getRecordInvite(long receiver,long channel_id){
+
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select * from Instance where instance_id="+channel_id+"and receiver="+receiver;
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<String> record=new ArrayList<String>();
+      while (result.next()) {
+        for(int i=1;i<4;i++) {
+        record.add(result.getString(i));
+        }
+        }
+      if(record.size()==0) {
+        return null;
+        }
+      return record;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving instance record");
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
   public void updatePlayers(JDA api) throws SQLException {
     ArrayList<String> member_id = this.getFieldFromTable("Player", "player_id");
 

@@ -4,6 +4,7 @@ import java.util.List;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Channel;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.managers.ChannelManager;
@@ -98,7 +99,6 @@ public class GeneralCommandManager {
       
       String channelname = arguments[3].replace(" ", "-");
       
-      
       // public | private, game_id (name), open slots, channel name
       String parent = "Testing Channels";
 
@@ -144,6 +144,7 @@ public class GeneralCommandManager {
         // Apply it to the database
         
         db.createInstance(privacy, gameid, capacity, newChannel.getIdLong(), channelname);
+        db.joinInstance(commandEvent.getAuthor().getIdLong(), newChannel.getIdLong());
       }
       else {
         channel.sendMessage("name already used").queue();
@@ -152,26 +153,65 @@ public class GeneralCommandManager {
     else if (command.contentEquals("join")) {
       
       ArrayList<Long> ids=this.db.getInstanceIDbyName(arguments[0]);
-      List<Channel> channels=channel.getGuild().getChannels();
-      ArrayList<Long> channel_ids_guild=new ArrayList<Long>();
+      List<TextChannel> channels=channel.getGuild().getTextChannels();
+      TextChannel target_channel=null;
       long channel_id=0;
       if(ids==null) {
         channel.sendMessage("invalid instance name").queue();
         return;
       }
       
-      for(int i=0;i<channels.size();i++) {
-        channel_ids_guild.add(channels.get(i).getIdLong());
-      }
-      
       for(long id:ids) {
-        if(channel_ids_guild.contains(id)) {
-          channel_id=id;
-          break;
+        for(int i=0;i<channels.size();i++) {
+          if(channels.get(i).getIdLong()==id) {
+            target_channel=channels.get(i);
+            channel_id=target_channel.getIdLong();
+          }
         }
       }
       
+      if(target_channel==null){
+        channel.sendMessage("invalid instance name").queue();
+        return;
+      }
       
+      List<Member> members_of_target_channel=target_channel.getMembers();
+      
+      for(int i=0;i<members_of_target_channel.size();i++) {
+        if(commandEvent.getAuthor().getIdLong()==members_of_target_channel.get(i).getUser().getIdLong()) {
+          channel.sendMessage("You're already in the Instance").queue();
+          return;
+        }
+      }
+      
+      //instance_id instance_name free_spots  game_id public
+      ArrayList<String> target_instance_record=db.getRecordInstance(channel_id);
+      ArrayList<String> target_invite=db.getRecordInvite(commandEvent.getAuthor().getIdLong(), channel_id);
+      
+      if(target_instance_record.get(6).equals("1")) {
+        channel.sendMessage("game already started you loser").queue();
+        return;
+      }
+      
+      //if private
+      if(target_instance_record.get(4).equals("0")) {
+        if(target_invite==null) {
+          channel.sendMessage("You do not have invite to this instance").queue();
+          return;
+        }
+      }
+      
+      if(Integer.parseInt(target_instance_record.get(2))<=0) {
+        channel.sendMessage("Not enough free spot for this instance ").queue();
+        return;
+      }
+      
+      db.joinInstance(commandEvent.getAuthor().getIdLong(), channel_id);
+      
+      
+      //room private->have invite/public. check free slots.
+      
+      //if request to join when already in, message you're already in the channel
       // Request to join an instance
 
       // TODO: Check for permission to join instance
