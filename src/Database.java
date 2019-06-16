@@ -466,7 +466,6 @@ public class Database {
       Statement statement = conn.createStatement();
       ResultSet direction = statement.executeQuery(
           "SELECT sorting_direction FROM GameType WHERE name = '" + gametype+"'");
-      System.out.println(direction);
       String result=null;
       while(direction.next()) {
         result=direction.getString(1);

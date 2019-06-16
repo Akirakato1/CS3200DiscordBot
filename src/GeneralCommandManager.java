@@ -76,7 +76,7 @@ public class GeneralCommandManager extends CommandManager{
         return;
       }
       for(ArrayList<String> score:scores) {
-        message=message+"**Game Type: **"+score.get(0)+"** Score: **"+score.get(1);
+        message=message+"\n**Game Type: **"+score.get(0)+"** Score: **"+score.get(1);
       }
       channel.sendMessage(message).queue();
       return;
@@ -98,7 +98,7 @@ public class GeneralCommandManager extends CommandManager{
         return;
       }
       for(ArrayList<String> score:scores) {
-        message=message+"**Player: **"+score.get(0)+"** Score: **"+score.get(1);
+        message=message+"\n**Player: **"+score.get(0)+"** Score: **"+score.get(1);
       }
       channel.sendMessage(message).queue();
       return;
