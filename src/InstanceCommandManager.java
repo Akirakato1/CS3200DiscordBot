@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -35,19 +36,15 @@ public class InstanceCommandManager extends CommandManager {
     System.out.println("Recieved instance command");
     String content = commandEvent.getMessage().getContentStripped();
     String command = content.substring(1);
+    TextChannel channel = commandEvent.getTextChannel();
+    // Separate command from arguments
     if (content.contains(":")) {
       command = command.substring(0, content.indexOf(":") - 1);
     }
-    String[] arguments = new String[] {};
-    if(content.length()-command.length()>1) {
-      arguments = content.substring(command.length() + 2).split(",");
-    }
-    // Strip whitespace from argument sides
-    for (int i = 0; i < arguments.length; i++) {
-      arguments[i] = arguments[i].trim();
-    }
-
-    TextChannel channel = commandEvent.getTextChannel();
+    // Put arguments in an ArrayList
+    String[] arguments = getArguments(content, channel, command);
+    
+    
 
     if (command.equals("invite")) {
       // Invite command.
@@ -101,6 +98,7 @@ public class InstanceCommandManager extends CommandManager {
       if (gameThreads.containsKey(key)) {
         // It's a game event! Process immediately!
         gameManagers.get(gameThreads.get(key)).processCommand(event);
+        
         // Check if the game is over
         if(gameManagers.get(gameThreads.get(key)).checkAndApplyFinished(key)) {
           // Remove from cache
@@ -108,6 +106,7 @@ public class InstanceCommandManager extends CommandManager {
         }
       }
     }
+    
     // Not sure if the instance has started. Database query for it.
     if(db.getInstanceStarted(event.getChannel().getIdLong())) {
       // Game is started. Add the missing information to the cache.

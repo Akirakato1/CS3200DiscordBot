@@ -6,8 +6,8 @@ public class QuizBowlManager extends GameManager{
   }
 
   
-  public void processCommand(MessageReceivedEvent commandEvent) {
-    // TODO Auto-generated method stub
+  public void update(MessageReceivedEvent message) {
+    
     
   }
 

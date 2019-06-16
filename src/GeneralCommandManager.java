@@ -33,21 +33,13 @@ public class GeneralCommandManager extends CommandManager{
     System.out.println("Recieved general command");
     String content = commandEvent.getMessage().getContentStripped();
     String command = content.substring(1);
+    TextChannel channel = commandEvent.getTextChannel();
+    // Separate command from arguments
     if (content.contains(":")) {
       command = command.substring(0, content.indexOf(":") - 1);
     }
-    String[] arguments = new String[] {};
-    if(content.length()-command.length()>1) {
-      arguments = content.substring(command.length() + 2).split(",");
-    }
-    // Strip whitespace from argument sides
-    for (int i = 0; i < arguments.length; i++) {
-      arguments[i] = arguments[i].trim();
-    }
-
-    String[] words = commandEvent.getMessage().getContentStripped().split(" ");
-    // Determine the command.
-    TextChannel channel = commandEvent.getTextChannel();
+    // Put arguments in an ArrayList
+    String[] arguments = getArguments(content, channel, command);
 
     // List all the channels on the server.
     // TODO: Remove testing command.
