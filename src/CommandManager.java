@@ -7,6 +7,7 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 // Abstracted functionality for a command manager.
 public abstract class CommandManager {
+  protected static final float SIMILARITY_THRESHOLD = 0.25f;
   ArrayList<String[]> commands;
   Database db;
 
@@ -105,5 +106,67 @@ public abstract class CommandManager {
       channel.sendMessage("Warning: "+emptyArguments+" empty arguments");
     }
     return argumentsList.toArray(new String[0]);
+  }
+  
+  //Super basic command troubleshooting.
+  protected int suggest(String command) {
+    ArrayList<Float> similarity = new ArrayList<Float>();
+    float mostSimilar = -1;
+    int similarCommand = -1;
+    for(int i = 0; i < commands.size(); i++) {
+      String[] match = commands.get(i);
+      // Find the similarity index
+      similarity.add(minDistance(command, match[0]) / (float)match[0].length());
+      if(similarity.get(i) > mostSimilar) {
+        // Update most similar
+        mostSimilar = similarity.get(i);
+        similarCommand = i;
+      }
+    }
+    if(mostSimilar < SIMILARITY_THRESHOLD) {
+      return similarCommand;
+    }
+    return -1;
+  }
+  
+  // String distance function, courtesy of Program Creek
+  public static int minDistance(String word1, String word2) {
+    int len1 = word1.length();
+    int len2 = word2.length();
+   
+    // len1+1, len2+1, because finally return dp[len1][len2]
+    int[][] dp = new int[len1 + 1][len2 + 1];
+   
+    for (int i = 0; i <= len1; i++) {
+      dp[i][0] = i;
+    }
+   
+    for (int j = 0; j <= len2; j++) {
+      dp[0][j] = j;
+    }
+   
+    //iterate though, and check last char
+    for (int i = 0; i < len1; i++) {
+      char c1 = word1.charAt(i);
+      for (int j = 0; j < len2; j++) {
+        char c2 = word2.charAt(j);
+   
+        //if last two chars equal
+        if (c1 == c2) {
+          //update dp value for +1 length
+          dp[i + 1][j + 1] = dp[i][j];
+        } else {
+          int replace = dp[i][j] + 1;
+          int insert = dp[i][j + 1] + 1;
+          int delete = dp[i + 1][j] + 1;
+   
+          int min = replace > insert ? insert : replace;
+          min = delete > min ? min : delete;
+          dp[i + 1][j + 1] = min;
+        }
+      }
+    }
+   
+    return dp[len1][len2];
   }
 }

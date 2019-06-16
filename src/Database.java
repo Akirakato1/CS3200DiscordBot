@@ -479,6 +479,23 @@ public class Database {
     }
   }
   
+  public ArrayList<String> getInstanceField(String tablename, String field, Long instanceID) {
+    try {
+      String command = "Select " + field + " from " + tablename+" WHERE instance_id="+instanceID;
+      ResultSet result = this.getResultSet(command);
+      ArrayList<String> array = new ArrayList<String>();
+      while (result.next()) {
+        array.add(result.getString(field));
+      }
+      return array;
+    }
+    
+    catch (SQLException e) {
+      System.out.println("ERROR: Could not retrieve " + field + " from " + tablename);
+      e.printStackTrace();
+      return null;
+    }
+  }
 
   public void closeConnection() throws SQLException {
     this.conn.close();

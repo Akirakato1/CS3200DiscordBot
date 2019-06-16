@@ -318,7 +318,14 @@ public class GeneralCommandManager extends CommandManager{
     }
     else {
       // Invalid command, commence suggestions?
-      channel.sendMessage("Invalid command. Type !help for a list of commands.").queue();
+      int suggested = suggest(command);
+      String suggestion = "";
+      if(suggested == -1) {
+        suggestion = "We couldn't figure out what you were going for there.\nType !help for a list of commands.";
+      }else {
+        suggestion = "did you mean: "+help(new String[] {commands.get(suggested)[0]});
+      }
+      channel.sendMessage("Invalid command. "+suggestion);
     }
 
   }

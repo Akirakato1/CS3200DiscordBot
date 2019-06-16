@@ -90,6 +90,16 @@ public class InstanceCommandManager extends CommandManager {
     else if (command.equals("help")) {
       channel.sendMessage(help(arguments)).queue();
     }
+    else {
+      int suggested = suggest(command);
+      String suggestion = "";
+      if(suggested == -1) {
+        suggestion = "We couldn't figure out what you were going for there.\nType !help for a list of commands.";
+      }else {
+        suggestion = "did you mean: "+help(new String[] {commands.get(suggested)[0]});
+      }
+      channel.sendMessage("Invalid command. "+suggestion).queue();
+    }
   }
 
   public void instanceMessage(MessageReceivedEvent event) {
