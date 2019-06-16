@@ -21,9 +21,11 @@ public class GeneralCommandManager extends CommandManager{
     commands.add(new String[] { "channelnames" });
     commands.add(
         new String[] { "createinstance", "[public | private]", "gametype", "capacity", "name" });
-    commands.add(new String[] { "join", "[instance name]" });
+    commands.add(new String[] { "join", "instance name" });
     commands.add(new String[] { "myinvites" });
     commands.add(new String[] { "instances" });
+    commands.add(new String[] { "myhighscores" });
+    commands.add(new String[] { "leaderboard", "gametype", "limitnumber(optional)" });
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -72,6 +74,41 @@ public class GeneralCommandManager extends CommandManager{
         channel_invite.getName()+" in server "+ guild.getName();
       }
       sendPrivateMessage(commandEvent.getAuthor(),message);
+      return;
+    }
+    else if (command.equals("myhighscores")) {
+      ArrayList<ArrayList<String>> scores=this.db.getUserScores(commandEvent.getAuthor().getIdLong());
+      String message="";
+      if(scores==null) {
+        channel.sendMessage("You have no scores").queue();
+        return;
+      }
+      for(ArrayList<String> score:scores) {
+        message=message+"**Game Type: **"+score.get(0)+"** Score: **"+score.get(1);
+      }
+      channel.sendMessage(message).queue();
+      return;
+    }
+    else if (command.equals("leaderboard")) {
+      if(arguments.length==0) {
+        channel.sendMessage("Invalid number of arguments").queue();
+        return;
+      }
+      String limit="";
+      if(arguments.length==2) {
+        limit="LIMIT "+arguments[1];
+      }
+      ArrayList<ArrayList<String>> scores=this.db.getGameTypeScores(arguments[0],limit);
+      
+      String message="";
+      if(scores==null) {
+        channel.sendMessage("This gametype has no scores").queue();
+        return;
+      }
+      for(ArrayList<String> score:scores) {
+        message=message+"**Player: **"+score.get(0)+"** Score: **"+score.get(1);
+      }
+      channel.sendMessage(message).queue();
       return;
     }
     else if (command.equals("instances")) {

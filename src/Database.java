@@ -200,7 +200,7 @@ public class Database {
   public ArrayList<ArrayList<String>> getInstances(long server_id){
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select * from Instance where server_id='"+server_id+"'";
+      String command = "Select * from Instance where server_id="+server_id+"";
       ResultSet result = statement.executeQuery(command);
       ArrayList<ArrayList<String>> instances = new ArrayList<ArrayList<String>>();
       while (result.next()) {
@@ -223,6 +223,62 @@ public class Database {
     }
   }
 
+  public ArrayList<ArrayList<String>> getGameTypeScores(String gametype, String limit){
+    try {
+      String direction=this.getGameTypeDirection(gametype);
+      if (direction==null) {
+        return null;
+      }
+      Statement statement = this.conn.createStatement();
+      String command = "Select Player.nickname, Leaderboard.score from ((Leaderboard inner join GameType"
+          + " on GameType.game_id=Leaderboard.game_id) inner join Player on Leaderboard.player_id=Player.player_id)"
+          + " where GameType.name='"+gametype+"' order by Leaderboard.score "+direction+" "+limit;
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<ArrayList<String>> scores = new ArrayList<ArrayList<String>>();
+      while (result.next()) {
+        ArrayList<String> toAdd = new ArrayList<String>();
+        toAdd.add(result.getString("nickname"));
+        toAdd.add(result.getString("score"));
+        scores.add(toAdd);
+      }
+      if (scores.size() == 0) {
+        return null;
+      }
+      return scores;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving user scores");
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
+  public ArrayList<ArrayList<String>> getUserScores(long player_id){
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select GameType.name, Leaderboard.score from Leaderboard inner join GameType"
+          + " on GameType.game_id=Leaderboard.game_id where Leaderboard.player_id="+player_id+""
+              + " order by GameType.name Desc";
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<ArrayList<String>> scores = new ArrayList<ArrayList<String>>();
+      while (result.next()) {
+        ArrayList<String> toAdd = new ArrayList<String>();
+        toAdd.add(result.getString("name"));
+        toAdd.add(result.getString("score"));
+        scores.add(toAdd);
+      }
+      if (scores.size() == 0) {
+        return null;
+      }
+      return scores;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving user scores");
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
   public ArrayList<Long> getInstanceIDbyName(String name) {
     try {
       Statement statement = this.conn.createStatement();
@@ -404,6 +460,25 @@ public class Database {
       return false;
     }
   }
+  
+  public String getGameTypeDirection(String gametype) {
+    try {
+      Statement statement = conn.createStatement();
+      ResultSet direction = statement.executeQuery(
+          "SELECT sorting_direction FROM GameType WHERE name = '" + gametype+"'");
+      System.out.println(direction);
+      String result=null;
+      while(direction.next()) {
+        result=direction.getString(1);
+      }
+      return result;
+    }catch(SQLException e) {
+      System.out.println("Couldn't get direction");
+      e.printStackTrace();
+      return "Desc";
+    }
+  }
+  
 
   public void closeConnection() throws SQLException {
     this.conn.close();
