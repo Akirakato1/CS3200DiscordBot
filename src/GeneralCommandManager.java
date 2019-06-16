@@ -85,11 +85,19 @@ public class GeneralCommandManager extends CommandManager{
         Guild guild=commandEvent.getGuild();
         TextChannel textc=guild.getTextChannelById(instance.get(0));
         String freespots=instance.get(1);
+        String visibility="private";
+        String started="Not Started";
         if(Integer.parseInt(instance.get(1))<0) {
           freespots="infinte";
         }
-        message=message+"\n Instance name: "+textc.getName()+" Free spots: "+freespots
-        +" Public? "+instance.get(2)+" Started? "+instance.get(3);
+        if(Integer.parseInt(instance.get(2))==1) {
+          visibility="public";
+        }
+        if(Integer.parseInt(instance.get(3))==1) {
+          visibility="Started";
+        }
+        message=message+"\n**Instance Type:** "+textc.getParent().getName()+" **Instance name:** "+textc.getName()+" **Free spots:** "+freespots
+        +" **"+visibility+"** "+started;
       }
       channel.sendMessage(message).queue();
       return;
@@ -145,9 +153,9 @@ public class GeneralCommandManager extends CommandManager{
       }
 
       String channelname = arguments[3].replace(" ", "-");
-
+      
       // public | private, game_id (name), open slots, channel name
-      String parent = "Testing Channels";
+      String parent = arguments[1];
 
       List<Channel> channels = commandEvent.getGuild().getChannels();
 

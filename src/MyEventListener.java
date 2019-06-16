@@ -43,11 +43,12 @@ public class MyEventListener extends ListenerAdapter {
     MessageChannel channel = event.getChannel();
     TextChannel channelt = event.getTextChannel();
     ChannelManager cm = channelt.getManager();
+    ArrayList<String> gametype_names=db.getFieldFromTable("GameType", "name");
 
     // Assume it is a command, redirect to appropriate command manager.
     String category = event.getTextChannel().getParent().getName();
     System.out.println(category);
-    if (category.equals("Testing Channels") || category.equals("Games")) {
+    if (gametype_names.contains(category)) {
       // It is an instance message.
       
       // Send it to the game processor

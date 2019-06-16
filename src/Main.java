@@ -14,9 +14,11 @@ public class Main {
       db.updatePlayers(api);
       List<Guild> guilds=api.getGuilds();
       
+      ArrayList<String> gametype_names=db.getFieldFromTable("GameType", "name");
       for(Guild g: guilds) {
-       createCategory("Testing Channels",g);
-       createCategory("Quiz Bowl",g);
+       for(String name:gametype_names) {
+         createCategory(name,g);
+       }
       }
     } catch (Exception e) {
       e.printStackTrace();
