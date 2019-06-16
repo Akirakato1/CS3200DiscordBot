@@ -390,6 +390,20 @@ public class Database {
     }
     return -1;
   }
+  
+  public boolean getInstanceStarted(long instanceID) {
+    try {
+      Statement statement = conn.createStatement();
+      ResultSet status = statement.executeQuery(
+          "SELECT started FROM Instance WHERE instance_id = " + instanceID);
+      status.next();
+      return status.getBoolean(1);
+    }catch(SQLException e) {
+      System.out.println("Couldn't get instance status!");
+      e.printStackTrace();
+      return false;
+    }
+  }
 
   public void closeConnection() throws SQLException {
     this.conn.close();

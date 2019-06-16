@@ -11,17 +11,23 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
 // Handles commands from Instance threads.
-public class InstanceCommandManager extends CommandManager{
-  
-  ArrayList<CommandManager> gameManagers; // gameManagers by GameID
-  HashMap<Long, Integer> gameThreads; // Maps threads that have started a game to the corresponding GameID
+public class InstanceCommandManager extends CommandManager {
+
+  ArrayList<GameManager> gameManagers; // gameManagers by GameID
+  HashMap<Long, Integer> gameThreads; // Maps threads that have started a game to the corresponding
+                                      // GameID
 
   public InstanceCommandManager(Database db) {
     super(db);
+    // Populate help function
     commands.add(new String[] { "!help", "context(optional)" });
     commands.add(new String[] { "!invite", "[\\@recipient(s)]" });
     commands.add(new String[] { "!leave" });
     commands.add(new String[] { "!start" });
+    
+    // Initialize GameManagers
+    gameManagers = new ArrayList<GameManager>();
+    gameManagers.add(new QuizBowlManager(db));
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -32,7 +38,10 @@ public class InstanceCommandManager extends CommandManager{
     if (content.contains(":")) {
       command = command.substring(0, content.indexOf(":") - 1);
     }
-    String[] arguments = content.substring(content.indexOf(":") + 1).split(",");
+    String[] arguments = new String[] {};
+    if(content.length()-command.length()>1) {
+      arguments = content.substring(command.length() + 2).split(",");
+    }
     // Strip whitespace from argument sides
     for (int i = 0; i < arguments.length; i++) {
       arguments[i] = arguments[i].trim();
@@ -57,8 +66,8 @@ public class InstanceCommandManager extends CommandManager{
       System.out.println(
           "Members left before leaving: " + commandEvent.getTextChannel().getMembers().size());
       db.leaveInstance(commandEvent.getAuthor().getIdLong(), commandEvent.getChannel().getIdLong());
-      
-      if (db.getNumMembers(commandEvent.getChannel().getIdLong())== 0) {
+
+      if (db.getNumMembers(commandEvent.getChannel().getIdLong()) == 0) {
         System.out.println("Deleting channel");
         // This is the last member. Delete the channel.
         db.deleteInstance(channel.getIdLong());
@@ -81,17 +90,31 @@ public class InstanceCommandManager extends CommandManager{
     else if (command.equals("start")) {
       // TODO: Implement database functions and game functions
     }
-    else if(command.equals("help")) {
+    else if (command.equals("help")) {
       channel.sendMessage(help(arguments)).queue();
     }
   }
-  /*
+
   public void instanceMessage(MessageReceivedEvent event) {
-    if(gameThreads.containsKey(event.getChannel().getIdLong())) {
-      // It's a game event!
-      
+    long key = event.getChannel().getIdLong();
+    if (!gameThreads.isEmpty()) {
+      if (gameThreads.containsKey(key)) {
+        // It's a game event! Process immediately!
+        gameManagers.get(gameThreads.get(key)).processCommand(event);
+        // Check if the game is over
+        if(gameManagers.get(gameThreads.get(key)).checkAndApplyFinished(key)) {
+          // Remove from cache
+          gameThreads.remove(key);
+        }
+      }
+    }
+    // Not sure if the instance has started. Database query for it.
+    if(db.getInstanceStarted(event.getChannel().getIdLong())) {
+      // Game is started. Add the missing information to the cache.
+      int gameID = Integer.parseInt(db.getIDbyNameGameType(event.getTextChannel().getTopic()));
+      gameThreads.put(key, gameID-1);
+      gameManagers.get(gameThreads.get(key)).processCommand(event);
     }
   }
-   */
-  
+
 }
