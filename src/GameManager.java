@@ -65,7 +65,7 @@ public abstract class GameManager extends CommandManager {
     quit(instanceID);
     int gameType = Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0));
     for(Long player: scores.keySet()) {
-      db.updateLeaderboard(player, gameType, scores.get(player), highIsGood);
+      db.setScore(player, gameType, scores.get(player), highIsGood);
     }
     
     // Add finished thread to status list.
