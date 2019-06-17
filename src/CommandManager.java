@@ -116,7 +116,11 @@ public abstract class CommandManager {
     for(int i = 0; i < commands.size(); i++) {
       String[] match = commands.get(i);
       // Find the similarity index
-      similarity.add(minDistance(command.substring(0, match[0].length()), match[0]) / (float)match[0].length());
+      String trimmedCommand = command;
+      if(command.length() > match[0].length()) {
+        trimmedCommand = command.substring(0, match[0].length());
+      }
+      similarity.add(minDistance(trimmedCommand, match[0]) / (float)match[0].length());
       if(similarity.get(i) < mostSimilar) {
         // Update most similar
         mostSimilar = similarity.get(i);

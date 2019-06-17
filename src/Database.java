@@ -384,7 +384,7 @@ public class Database {
   public void updateInstanceField(String table_name, String field_name, String field_value, long instance_id) {
     try {
       Statement statement = this.conn.createStatement();
-      String update_field = "Update "+table_name+" set "+field_name+"="+field_value+" where instance_id=instance_id";
+      String update_field = "Update "+table_name+" set "+field_name+"="+field_value+" where instance_id="+instance_id;
       statement.executeUpdate(update_field);
     }
     catch (SQLException e) {

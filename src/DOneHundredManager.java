@@ -17,17 +17,18 @@ public class DOneHundredManager extends GameManager {
   @Override
   public void update(MessageReceivedEvent message) {
     Long instanceID = message.getChannel().getIdLong();
+    System.out.println(instanceID);
     Long sender = message.getAuthor().getIdLong();
     HashMap<Long, Integer> rolls = globalRolls.get(instanceID);
     TextChannel channel = message.getTextChannel();
     if (message.getMessage().getContentStripped().equalsIgnoreCase("roll")) {
       if (rolls.containsKey(sender)) {
-        channel.sendMessage("Hey! "+message.getAuthor().getName()+"! You don't get to roll again!");
+        channel.sendMessage("Hey! "+message.getAuthor().getName()+"! You don't get to roll again!").queue();
       }
       else {
         int roll = rand.nextInt(100);
         rolls.put(sender, roll);
-        channel.sendMessage(message.getAuthor().getName() + " rolled " + roll);
+        channel.sendMessage(message.getAuthor().getName() + " rolled " + roll).queue();
         
         // Check for game end condition
         if(rolls.size() == db.getNumMembers(instanceID)) {
@@ -36,7 +37,7 @@ public class DOneHundredManager extends GameManager {
       }
     }
     else {
-      channel.sendMessage("Roll my child.");
+      channel.sendMessage("Roll my child.").queue();
     }
 
   }
@@ -45,8 +46,10 @@ public class DOneHundredManager extends GameManager {
     return true;
   }
 
-  void start(String[] arguments, Long instanceID) throws Exception {
+  String start(String[] arguments, Long instanceID) throws Exception {
+    System.out.println(instanceID);
     globalRolls.put(instanceID, new HashMap<Long, Integer>());
+    return "Welcome to 1d100! The rules are simple! Type \"!roll\" to roll a d100! You only get one try, tho.";
   }
 
 }

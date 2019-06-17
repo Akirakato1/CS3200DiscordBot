@@ -1,3 +1,4 @@
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +30,9 @@ public class InstanceCommandManager extends CommandManager {
     // Initialize GameManagers
     gameManagers = new ArrayList<GameManager>();
     gameManagers.add(new QuizBowlManager(db));
+    gameManagers.add(null);
+    gameManagers.add(new DOneHundredManager(db));
+    gameThreads = new HashMap<Long, Integer>();
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -94,9 +98,13 @@ public class InstanceCommandManager extends CommandManager {
       }
     }
     else if (command.equals("start")) {
+      Long instanceID = commandEvent.getChannel().getIdLong();
+      gameThreads.put(instanceID, Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0))-1);
+      GameManager gm = gameManagers.get(gameThreads.get(instanceID));
       try {
-        Long instanceID = commandEvent.getChannel().getIdLong();
-        gameThreads.put(instanceID, Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0)));
+        String startMessage = gm.start(arguments, instanceID);
+        channel.sendMessage(startMessage).queue();
+        db.updateInstanceField("Instance", "started", "1", instanceID);
       }catch(Exception e) {
         String message = e.getMessage();
         int index = Integer.parseInt(message.substring(0, message.indexOf(":")-1));
@@ -143,9 +151,15 @@ public class InstanceCommandManager extends CommandManager {
     boolean started = db.getInstanceStarted(event.getChannel().getIdLong());
     if(started) {
       // Game is started. Add the missing information to the cache.
-      int gameID = Integer.parseInt(db.getIDbyNameGameType(event.getTextChannel().getTopic()));
+      int gameID = Integer.parseInt(db.getIDbyNameGameType(event.getTextChannel().getParent().getName()));
       gameThreads.put(key, gameID-1);
       gameManagers.get(gameThreads.get(key)).processCommand(event);
+      try {
+        
+        gameManagers.get(gameThreads.get(key)).start(new String[] {}, key);
+      }catch(Exception e) {
+        e.printStackTrace();
+      }
     }
     return started;
   }

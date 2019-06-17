@@ -211,9 +211,9 @@ public class QuizBowlManager extends GameManager {
   }
 
   @Override
-  void start(String[] arguments, Long instanceID) throws Exception {
+  String start(String[] arguments, Long instanceID) throws Exception {
     // TODO Auto-generated method stub
-    
+    return "";
   }
   
   @Override

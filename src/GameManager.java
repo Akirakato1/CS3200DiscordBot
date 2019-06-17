@@ -57,7 +57,7 @@ public abstract class GameManager extends CommandManager {
   
   // Code for starting the game. If an argument is invalid, throw an error following this format:
   // "[invalid index]:description"
-  abstract void start(String[] arguments, Long instanceID) throws Exception;
+  abstract String start(String[] arguments, Long instanceID) throws Exception;
   
   protected void quit(Long instanceID) {}
   
