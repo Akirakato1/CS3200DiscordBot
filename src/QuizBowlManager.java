@@ -135,7 +135,7 @@ public class QuizBowlManager extends GameManager {
     // Remove empty words, if there are any. Go backwards to avoid funny index stuff
     // on deletion.
     for (int i = qWords.size() - 1; i >= 0; i--) {
-      if (qWords.get(i).isBlank()) {
+      if (qWords.get(i).isEmpty()) {
         if (i <= keyPoint) {
           keyPoint--;
         }
