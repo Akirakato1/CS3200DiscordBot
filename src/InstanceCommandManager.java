@@ -86,6 +86,10 @@ public class InstanceCommandManager extends CommandManager {
     }
     else if (command.equals("start")) {
       // TODO: Implement database functions and game functions
+      // Find the correct gameManager to send the request
+      // Call start(arguments)
+      // Catch and display exception on failure
+      // Add to the redirection cache on success
     }
     else if (command.equals("help")) {
       channel.sendMessage(help(arguments)).queue();
@@ -113,6 +117,8 @@ public class InstanceCommandManager extends CommandManager {
         if(gameManagers.get(gameThreads.get(key)).checkAndApplyFinished(key)) {
           // Remove from cache
           gameThreads.remove(key);
+          //TODO: set gameStarted to false on db
+          
         }
       }
     }

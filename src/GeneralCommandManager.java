@@ -325,7 +325,7 @@ public class GeneralCommandManager extends CommandManager{
       }else {
         suggestion = "did you mean: "+help(new String[] {commands.get(suggested)[0]});
       }
-      channel.sendMessage("Invalid command. "+suggestion);
+      channel.sendMessage("Invalid command. "+suggestion).queue();
     }
 
   }

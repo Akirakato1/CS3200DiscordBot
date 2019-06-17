@@ -490,7 +490,45 @@ public class Database {
     }
     
     catch (SQLException e) {
-      System.out.println("ERROR: Could not retrieve " + field + " from " + tablename);
+      System.out.println("ERROR: Could not retrieve " + field + " from " + tablename+" at instance "+instanceID);
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
+  public String getInstancedPlayerField(String tablename, String field, Long instanceID, Long playerID) {
+    try {
+      String command = "Select " + field + " from " + tablename+" WHERE instance_id="+instanceID+" AND player_id = "+playerID;
+      ResultSet result = this.getResultSet(command);
+      result.next();
+      return result.getString(1);
+    }
+    
+    catch (SQLException e) {
+      System.out.println("ERROR: Could not retrieve " + field + " from " + tablename+" at instance "+instanceID+" for player "+playerID);
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
+  public ArrayList<String> getRandomTuple(String tablename) {
+    try {
+      String command = "Select * from " + tablename+" ORDER BY RAND() LIMIT 1";
+      ResultSet result = this.getResultSet(command);
+      result.next();
+      ArrayList<String> array = new ArrayList<String>();
+      for(int i = 1; i <= result.getFetchSize(); i++) {
+        try {
+          array.add(result.getString(i));
+        }catch(Exception e) {
+          return array;
+        }
+      }
+      return array;
+    }
+    
+    catch (SQLException e) {
+      System.out.println("ERROR: Could not retrieve tuple from " + tablename);
       e.printStackTrace();
       return null;
     }

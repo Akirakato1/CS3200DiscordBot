@@ -46,13 +46,16 @@ public abstract class GameManager extends CommandManager {
     if (threadState == null) {
       // Not paused and not finished
       status.put(instanceID, false);
-
     }
     else if (!threadState.booleanValue()) {
       // Paused and not finished
       status.remove(instanceID);
     }
   }
+  
+  abstract boolean canPause(Long instanceID);
+  
+  abstract void start(String[] arguments) throws Exception;
   
   protected void endGame(Long instanceID, HashMap<Long, Integer> scores, boolean highIsGood) {
     //TODO: Update leaderboard using score info.
