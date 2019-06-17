@@ -59,9 +59,8 @@ public class MyEventListener extends ListenerAdapter {
       // It is an instance message.
       
       // Send it to the game processor
-      //icm.instanceMessage(event);
+      if(!icm.instanceMessage(event) && content[0].startsWith("!")) {
       //Process it as a command if applicable
-      if (content[0].startsWith("!")) {
         System.out.println("Redirecting to instance");
         icm.processCommand(event);
       }

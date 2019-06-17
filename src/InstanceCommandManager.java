@@ -115,7 +115,8 @@ public class InstanceCommandManager extends CommandManager {
     }
   }
 
-  public void instanceMessage(MessageReceivedEvent event) {
+  // Redirects to the GameManager if applicable, returns if the game has started.
+  public boolean instanceMessage(MessageReceivedEvent event) {
     long key = event.getChannel().getIdLong();
     if (!gameThreads.isEmpty()) {
       if (gameThreads.containsKey(key)) {
@@ -133,12 +134,14 @@ public class InstanceCommandManager extends CommandManager {
     }
     
     // Not sure if the instance has started. Database query for it.
-    if(db.getInstanceStarted(event.getChannel().getIdLong())) {
+    boolean started = db.getInstanceStarted(event.getChannel().getIdLong());
+    if(started) {
       // Game is started. Add the missing information to the cache.
       int gameID = Integer.parseInt(db.getIDbyNameGameType(event.getTextChannel().getTopic()));
       gameThreads.put(key, gameID-1);
       gameManagers.get(gameThreads.get(key)).processCommand(event);
     }
+    return started;
   }
 
 }
