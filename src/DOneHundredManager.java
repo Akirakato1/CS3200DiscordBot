@@ -47,7 +47,6 @@ public class DOneHundredManager extends GameManager {
 
   void start(String[] arguments, Long instanceID) throws Exception {
     globalRolls.put(instanceID, new HashMap<Long, Integer>());
-
   }
 
 }

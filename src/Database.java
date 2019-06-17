@@ -324,7 +324,6 @@ public class Database {
   }
 
   public ArrayList<String> getRecordInvite(long receiver, long channel_id) {
-
     try {
       Statement statement = this.conn.createStatement();
       String command = "Select * from Invite inner join Instance on Invite.instance_id=Instance.instance_id "
@@ -348,9 +347,53 @@ public class Database {
     }
   }
 
+  public void setScore(long player_id, int game_id, int score, boolean highIsGood) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select score from leaderboard where game_id="+game_id+" and player_id="+player_id;
+      
+      ResultSet result = statement.executeQuery(command);
+      String db_score=null;
+      while (result.next()) {
+        db_score=result.getString("score");
+      }
+      
+      String setScore="";
+      if(db_score!=null) {
+      if (Integer.parseInt(db_score)<score == highIsGood) {
+        db_score=""+score;
+      }
+      setScore = "Update Leaderboard set score="+db_score+" where player_id="+player_id+" and game_id="+game_id;
+      }
+      else {
+        db_score=""+score;
+        setScore = "insert into Leaderboard (player_id, game_id, score) "
+            + "Values ("+player_id+", "+game_id+", "+db_score+")";
+      }
+      
+      
+      statement.executeUpdate(setScore);
+      
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving instance record");
+      e.printStackTrace();
+    }
+  }
+  
+  public void updateInstanceField(String table_name, String field_name, String field_value, long instance_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String update_field = "Update "+table_name+" set "+field_name+"="+field_value+" where instance_id=instance_id";
+      statement.executeUpdate(update_field);
+    }
+    catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+  
   public void updatePlayers(JDA api) throws SQLException {
     ArrayList<String> member_id = this.getFieldFromTable("Player", "player_id");
-
     List<Guild> guilds = api.getGuilds();
     for (Guild g : guilds) {
       for (Member m : g.getMembers()) {
