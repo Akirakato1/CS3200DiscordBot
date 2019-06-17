@@ -55,7 +55,7 @@ public abstract class GameManager extends CommandManager {
   
   abstract boolean canPause(Long instanceID);
   
-  abstract void start(String[] arguments) throws Exception;
+  abstract void start(String[] arguments, Long instanceID) throws Exception;
   
   protected void endGame(Long instanceID, HashMap<Long, Integer> scores, boolean highIsGood) {
     //TODO: Update leaderboard using score info.

@@ -1,3 +1,5 @@
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,6 +21,7 @@ public class QuizBowlManager extends GameManager {
   private static final int SPEECH_RATE = 545;
   private static final int PING_DELAY = 5000;
   private static final int ANSWER_DELAY = 10000;
+  private static final int DELAY_BETWEEN_ROUNDS = 2000;
 
   public QuizBowlManager(Database db) {
     super(db);
@@ -66,36 +69,55 @@ public class QuizBowlManager extends GameManager {
       globalTimers.get(session).clear();
       // TODO: Judge answer
 
-      // Is this the last question?
-      // Table, Field, session
-      if (db.getInstanceField("QuizBowl_Single", "questions_left", session).get(0).equals("0")) {
-        HashMap<Long, Integer> scores = new HashMap<Long, Integer>();
-        for (Member m : channel.getMembers()) {
-          Long player = m.getUser().getIdLong();
-
-          // Get player score components
-          int correct = Integer.parseInt(
-              db.getInstancedPlayerField("QuizBowl_Player", "correct_answers", session, player));
-          int speedy = Integer.parseInt(
-              db.getInstancedPlayerField("QuizBowl_Player", "speed_bonus", session, player));
-
-          // Insert into HashMap
-          scores.put(player, CORRECT_SCORE * correct + FAST_BONUS * speedy);
-        }
-        endGame(session, scores, true);
-      }
-      else {
-        // Otherwise ready the next question
-        readyNextQuestion(channel, session, 0); // TODO: Modify with delay so far
-      }
+      // Otherwise ready the next question
+      readyNextQuestion(channel, session, DELAY_BETWEEN_ROUNDS); // TODO: Modify with delay so far
 
     }
   }
 
   private void readyNextQuestion(TextChannel channel, Long sessionID, long pDelay) {
+    
+    // Is this the last question?
+    // Table, Field, session
+    if (db.getInstanceField("QuizBowl_Single", "questions_left", sessionID).get(0).equals("0")) {
+      HashMap<Long, Integer> scores = new HashMap<Long, Integer>();
+      for (Member m : channel.getMembers()) {
+        Long player = m.getUser().getIdLong();
+
+        // Get player score components
+        int correct = Integer.parseInt(
+            db.getInstancedPlayerField("QuizBowl_Player", "correct_answers", sessionID, player));
+        int speedy = Integer.parseInt(
+            db.getInstancedPlayerField("QuizBowl_Player", "speed_bonus", sessionID, player));
+
+        // Insert into HashMap
+        scores.put(player, CORRECT_SCORE * correct + FAST_BONUS * speedy);
+      }
+      endGame(sessionID, scores, true);
+      return;
+    }
+    
+    
+    // Select new question
     ArrayList<String> question = db.getRandomTuple("QuizBowl_Question");
     int qid = Integer.parseInt(question.get(0));
 
+    readyQuestion(channel, question, qid, sessionID, pDelay);
+
+    // Subtract 1 from questions left
+    try {
+      db.executeUpdate(db.getConnection(),
+          "UPDATE QuizBowl_Single SET questions_left = questions_left - 1 WHERE instance_id="
+              + sessionID);
+    }
+    catch (SQLException e) {
+      System.out.println("Couldn't update questions left!");
+      e.printStackTrace();
+    }
+  }
+  
+  // Helper method for both readying a new question and repeating the previous question.
+  void readyQuestion(TextChannel channel, ArrayList<String> question, int qid, Long sessionID, Long pDelay) {
     ArrayList<String> qWords = new ArrayList<String>();
     qWords.addAll(Arrays.asList(question.get(1).split(" ")));
     // Process question to find key point
@@ -143,7 +165,7 @@ public class QuizBowlManager extends GameManager {
     // Prepare time up event
     Runnable timeUp = new Runnable() {
       public void run() {
-        timeUp(channel, sessionID);
+        pingTimeUp(channel, sessionID);
       }
     };
     ScheduledFuture timeUpFuture = executorService.schedule(timeUp, delay + PING_DELAY,
@@ -152,13 +174,46 @@ public class QuizBowlManager extends GameManager {
     globalTimers.get(sessionID).put("answerTimeUp", timeUpFuture);
   }
 
-  void timeUp(TextChannel channel, Long InstanceID) {
+  // Handles time up for pinging
+  void pingTimeUp(TextChannel channel, Long instanceID) {
+    int qid = Integer
+        .parseInt(db.getInstanceField("QuizBowl_Single", "current_q", instanceID).get(0));
+    String answer = "";
+    try {
+      ResultSet rs = db.getResultSet("SELECT answer FROM QuizBowl_Questions WHERE qbq_id = " + qid);
+      rs.next();
+      answer = rs.getString(1);
+    }
+    catch (SQLException e) {
+      System.out.println("Couldn't retrieve answer?!");
+      e.printStackTrace();
+    }
+
+    // Print the answer!
+    channel.sendMessage("Time up! the correct answer was: \n" + answer);
+
+    readyNextQuestion(channel, instanceID, DELAY_BETWEEN_ROUNDS);
 
   }
 
-  void start(String[] arguments) throws Exception {
-    // TODO Auto-generated method stub
+  // Handles time up for answering
+  void answerTimeUp(TextChannel channel, Long instanceID) {
 
+    // Clear answering
+    try {
+      db.executeUpdate(db.getConnection(),
+          "UPDATE QuizBowl_Single SET answering = NULL WHERE instance_id = " + instanceID);
+    }
+    catch (SQLException e) {
+      System.out.println("Couldn't clear answering");
+      e.printStackTrace();
+    }
+  }
+
+  @Override
+  void start(String[] arguments, Long instanceID) throws Exception {
+    // TODO Auto-generated method stub
+    
   }
 
 }
