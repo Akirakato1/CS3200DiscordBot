@@ -32,7 +32,7 @@ public class DOneHundredManager extends GameManager {
         
         // Check for game end condition
         if(rolls.size() == db.getNumMembers(instanceID)) {
-          this.endGame(instanceID, rolls, true);
+          this.endGame(channel, instanceID, rolls, true);
         }
       }
     }

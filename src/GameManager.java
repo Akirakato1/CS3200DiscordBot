@@ -1,5 +1,8 @@
 import java.util.HashMap;
+import java.util.List;
 
+import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 // Abstract class for objects that handle game events. Contains helpers for managing pausing and game end states.
@@ -61,13 +64,25 @@ public abstract class GameManager extends CommandManager {
   
   protected void quit(Long instanceID) {}
   
-  protected void endGame(Long instanceID, HashMap<Long, Integer> scores, boolean highIsGood) {
+  protected void endGame(TextChannel channel, Long instanceID, HashMap<Long, Integer> scores, boolean highIsGood) {
     quit(instanceID);
+    Long winnerID = scores.keySet().iterator().next(); // default to p1
+    int bestScore = scores.get(winnerID); // default to p1's score
     int gameType = Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0));
-    for(Long player: scores.keySet()) {
-      db.setScore(player, gameType, scores.get(player), highIsGood);
-    }
     
+    for(Long player: scores.keySet()) {
+      int score = scores.get(player);
+      db.setScore(player, gameType, score, highIsGood);
+      if(highIsGood == score > bestScore) {
+        bestScore = score;
+        winnerID = player;
+      }
+      
+    }
+    System.out.println(winnerID);
+    Member winner = channel.getGuild().getMemberById(winnerID);
+    String winnerName = winner.getEffectiveName();
+    channel.sendMessage("Congratulations, "+winnerName+"!\nYou won with "+bestScore+" points!").queue();
     // Add finished thread to status list.
     status.put(instanceID, true);
   }

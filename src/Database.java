@@ -350,7 +350,7 @@ public class Database {
   public void setScore(long player_id, int game_id, int score, boolean highIsGood) {
     try {
       Statement statement = this.conn.createStatement();
-      String command = "Select score from leaderboard where game_id="+game_id+" and player_id="+player_id;
+      String command = "Select score from Leaderboard where game_id="+game_id+" and player_id="+player_id;
       
       ResultSet result = statement.executeQuery(command);
       String db_score=null;

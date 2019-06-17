@@ -26,7 +26,7 @@ public class InstanceCommandManager extends CommandManager {
     commands.add(new String[] { "invite", "[\\@recipient(s)]" });
     commands.add(new String[] { "leave" });
     commands.add(new String[] { "start" });
-    
+
     // Initialize GameManagers
     gameManagers = new ArrayList<GameManager>();
     gameManagers.add(new QuizBowlManager(db));
@@ -47,8 +47,6 @@ public class InstanceCommandManager extends CommandManager {
     }
     // Put arguments in an ArrayList
     String[] arguments = getArguments(content, channel, command);
-    
-    
 
     if (command.equals("invite")) {
       // Invite command.
@@ -57,7 +55,8 @@ public class InstanceCommandManager extends CommandManager {
       String channelName = commandEvent.getChannel().getName();
       for (Member m : invited) {
         // TODO: Add the invite to the SQL database.
-        sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName +" in Server "+commandEvent.getGuild().getName());
+        sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName
+            + " in Server " + commandEvent.getGuild().getName());
         db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(),
             channel.getIdLong());
       }
@@ -75,15 +74,16 @@ public class InstanceCommandManager extends CommandManager {
         commandEvent.getTextChannel().delete().queue();
       }
       else {
-        
-        String freespots=db.getInstanceField("Instance", "free_spots", channel.getIdLong()).get(0);
-        if(Integer.parseInt(freespots)<0) {
-          freespots="Infinite";
+
+        String freespots = db.getInstanceField("Instance", "free_spots", channel.getIdLong())
+            .get(0);
+        if (Integer.parseInt(freespots) < 0) {
+          freespots = "Infinite";
         }
-        
-        channel.sendMessage(commandEvent.getAuthor().getName()+" has left your struggle. \nRemaining free spots: "+
-            freespots).queue();
-            
+
+        channel.sendMessage(commandEvent.getAuthor().getName()
+            + " has left your struggle. \nRemaining free spots: " + freespots).queue();
+
         System.out.println("Removing permissions");
         // Not the last member. Simply remove permissions.
         ArrayList<Permission> permissions = new ArrayList<Permission>();
@@ -99,16 +99,18 @@ public class InstanceCommandManager extends CommandManager {
     }
     else if (command.equals("start")) {
       Long instanceID = commandEvent.getChannel().getIdLong();
-      gameThreads.put(instanceID, Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0))-1);
+      gameThreads.put(instanceID,
+          Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0)) - 1);
       GameManager gm = gameManagers.get(gameThreads.get(instanceID));
       try {
         String startMessage = gm.start(arguments, instanceID);
         channel.sendMessage(startMessage).queue();
         db.updateInstanceField("Instance", "started", "1", instanceID);
-      }catch(Exception e) {
+      }
+      catch (Exception e) {
         String message = e.getMessage();
-        int index = Integer.parseInt(message.substring(0, message.indexOf(":")-1));
-        String description = message.substring(message.indexOf(":")+1);
+        int index = Integer.parseInt(message.substring(0, message.indexOf(":") - 1));
+        String description = message.substring(message.indexOf(":") + 1);
         message = this.errorMessage(command, arguments, index, description);
         channel.sendMessage(message).queue();
         return;
@@ -120,12 +122,13 @@ public class InstanceCommandManager extends CommandManager {
     else {
       int suggested = suggest(command);
       String suggestion = "";
-      if(suggested == -1) {
+      if (suggested == -1) {
         suggestion = "We couldn't figure out what you were going for there.\nType !help for a list of commands.";
-      }else {
-        suggestion = "did you mean: "+help(new String[] {commands.get(suggested)[0]});
       }
-      channel.sendMessage("Invalid command. "+suggestion).queue();
+      else {
+        suggestion = "did you mean: " + help(new String[] { commands.get(suggested)[0] });
+      }
+      channel.sendMessage("Invalid command. " + suggestion).queue();
     }
   }
 
@@ -136,28 +139,31 @@ public class InstanceCommandManager extends CommandManager {
       if (gameThreads.containsKey(key)) {
         // It's a game event! Process immediately!
         gameManagers.get(gameThreads.get(key)).processCommand(event);
-        
+
         // Check if the game is over
-        if(gameManagers.get(gameThreads.get(key)).checkAndApplyFinished(key)) {
+        if (gameManagers.get(gameThreads.get(key)).checkAndApplyFinished(key)) {
           // Remove from cache
           gameThreads.remove(key);
-          //TODO: set gameStarted to false on db
+          // TODO: set gameStarted to false on db
           db.updateInstanceField("Instance", "started", "0", event.getChannel().getIdLong());
         }
+        return true;
       }
     }
-    
+
     // Not sure if the instance has started. Database query for it.
     boolean started = db.getInstanceStarted(event.getChannel().getIdLong());
-    if(started) {
+    if (started) {
       // Game is started. Add the missing information to the cache.
-      int gameID = Integer.parseInt(db.getIDbyNameGameType(event.getTextChannel().getParent().getName()));
-      gameThreads.put(key, gameID-1);
+      int gameID = Integer
+          .parseInt(db.getIDbyNameGameType(event.getTextChannel().getParent().getName()));
+      gameThreads.put(key, gameID - 1);
       gameManagers.get(gameThreads.get(key)).processCommand(event);
       try {
-        
+
         gameManagers.get(gameThreads.get(key)).start(new String[] {}, key);
-      }catch(Exception e) {
+      }
+      catch (Exception e) {
         e.printStackTrace();
       }
     }

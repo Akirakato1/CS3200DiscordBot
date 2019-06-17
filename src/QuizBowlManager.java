@@ -93,7 +93,7 @@ public class QuizBowlManager extends GameManager {
         // Insert into HashMap
         scores.put(player, CORRECT_SCORE * correct + FAST_BONUS * speedy);
       }
-      endGame(sessionID, scores, true);
+      endGame(channel, sessionID, scores, true);
       return;
     }
     
