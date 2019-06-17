@@ -53,7 +53,7 @@ public class InstanceCommandManager extends CommandManager {
       String channelName = commandEvent.getChannel().getName();
       for (Member m : invited) {
         // TODO: Add the invite to the SQL database.
-        sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName);
+        sendPrivateMessage(m.getUser(), senderName + " invited you to join " + channelName +" in Server "+commandEvent.getGuild().getName());
         db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(),
             channel.getIdLong());
       }
@@ -71,8 +71,14 @@ public class InstanceCommandManager extends CommandManager {
         commandEvent.getTextChannel().delete().queue();
       }
       else {
+        
+        String freespots=db.getInstanceField("Instance", "free_spots", channel.getIdLong()).get(0);
+        if(Integer.parseInt(freespots)<0) {
+          freespots="Infinite";
+        }
+        
         channel.sendMessage(commandEvent.getAuthor().getName()+" has left your struggle. \nRemaining free spots: "+
-            db.getInstanceField("Instance", "free_spots", channel.getIdLong()).get(0)).queue();
+            freespots).queue();
             
         System.out.println("Removing permissions");
         // Not the last member. Simply remove permissions.

@@ -50,7 +50,7 @@ public class GeneralCommandManager extends CommandManager{
       for (Channel c : channels) {
         channelnames = channelnames + c.getName() + " \n";
       }
-      channel.sendMessage("Channel names: " + channelnames).queue();
+      channel.sendMessage("Channel names: \n" + channelnames).queue();
     }
     else if(command.equals("initbot")) {
       try {
@@ -60,14 +60,16 @@ public class GeneralCommandManager extends CommandManager{
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
-      List<Guild> guilds=commandEvent.getJDA().getGuilds();
+      Guild g=commandEvent.getGuild();
       
       ArrayList<String> gametype_names=db.getFieldFromTable("GameType", "name");
-      for(Guild g: guilds) {
+      
        for(String name:gametype_names) {
          Main.createCategory(name,g);
        }
-    }}
+       
+      channel.sendMessage("Game Bot is initialised").queue();  
+    }
     else if(command.equals("myinvites")) {
       ArrayList<ArrayList<String>> invites=this.db.getInvites(commandEvent.getAuthor().getIdLong());
       String message="";
@@ -102,7 +104,7 @@ public class GeneralCommandManager extends CommandManager{
         channel.sendMessage("Invalid number of arguments").queue();
         return;
       }
-      String limit="";
+      String limit="LIMIT 10";
       if(arguments.length==2) {
         limit="LIMIT "+arguments[1];
       }
@@ -311,8 +313,13 @@ public class GeneralCommandManager extends CommandManager{
 
       TextChannel tc = commandEvent.getGuild().getTextChannelById(channel_id);
       
+      String freespots=db.getInstanceField("Instance", "free_spots", channel_id).get(0);
+      if(Integer.parseInt(freespots)<0) {
+        freespots="Infinite";
+      }
+      
       tc.sendMessage(commandEvent.getAuthor().getName()+" has joined your struggle. \nRemaining free spots: "+
-      db.getInstanceField("Instance", "free_spots", channel_id).get(0)).queue();
+     freespots).queue();
       
       // room private->have invite/public. check free slots.
 
