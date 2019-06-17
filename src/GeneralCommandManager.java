@@ -52,6 +52,22 @@ public class GeneralCommandManager extends CommandManager{
       }
       channel.sendMessage("Channel names: " + channelnames).queue();
     }
+    else if(command.equals("initbot")) {
+      try {
+        db.updatePlayers(commandEvent.getJDA());
+      }
+      catch (SQLException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      List<Guild> guilds=commandEvent.getJDA().getGuilds();
+      
+      ArrayList<String> gametype_names=db.getFieldFromTable("GameType", "name");
+      for(Guild g: guilds) {
+       for(String name:gametype_names) {
+         Main.createCategory(name,g);
+       }
+    }}
     else if(command.equals("myinvites")) {
       ArrayList<ArrayList<String>> invites=this.db.getInvites(commandEvent.getAuthor().getIdLong());
       String message="";
@@ -259,14 +275,12 @@ public class GeneralCommandManager extends CommandManager{
         return;
       }
 
-      List<Member> members_of_target_channel = target_channel.getMembers();
-
-      for (int i = 0; i < members_of_target_channel.size(); i++) {
-        if (commandEvent.getAuthor().getIdLong() == members_of_target_channel.get(i).getUser()
-            .getIdLong()) {
+      ArrayList<String> members=db.getInstanceField("Plays", "player_id", target_channel.getIdLong());
+      
+      
+        if (members.contains(""+commandEvent.getAuthor().getIdLong())) {
           channel.sendMessage("You're already in the Instance").queue();
           return;
-        }
       }
 
       // instance_id instance_name free_spots game_id public
@@ -274,26 +288,32 @@ public class GeneralCommandManager extends CommandManager{
       ArrayList<String> target_invite = db.getRecordInvite(commandEvent.getAuthor().getIdLong(),
           channel_id);
 
-      if (target_instance_record.get(5).equals("1")) {
+      if (target_instance_record.get(6).equals("1")) {
         channel.sendMessage("game already started you loser").queue();
         return;
       }
 
       // if private
-      if (target_instance_record.get(4).equals("0")) {
+      if (target_instance_record.get(5).equals("0")) {
         if (target_invite == null) {
           channel.sendMessage("You do not have invite to this instance").queue();
           return;
         }
       }
 
-      if (Integer.parseInt(target_instance_record.get(2)) == 0) {
+      if (Integer.parseInt(target_instance_record.get(3)) == 0) {
         channel.sendMessage("Not enough free spot for this instance ").queue();
         return;
       }
 
       db.joinInstance(commandEvent.getAuthor().getIdLong(), channel_id);
+      
 
+      TextChannel tc = commandEvent.getGuild().getTextChannelById(channel_id);
+      
+      tc.sendMessage(commandEvent.getAuthor().getName()+" has joined your struggle. \nRemaining free spots: "+
+      db.getInstanceField("Instance", "free_spots", channel_id).get(0)).queue();
+      
       // room private->have invite/public. check free slots.
 
       // if request to join when already in, message you're already in the channel
@@ -304,8 +324,7 @@ public class GeneralCommandManager extends CommandManager{
       // Join the channel
       // TODO: Search Database for channel id using name
 
-      TextChannel tc = commandEvent.getGuild().getTextChannelById(channel_id);
-      PermissionOverrideAction poa = tc.createPermissionOverride(commandEvent.getMember());
+      PermissionOverrideAction poa = tc.putPermissionOverride(commandEvent.getMember());
       ArrayList<Permission> permissions = new ArrayList<Permission>();
       permissions.add(Permission.MESSAGE_READ);
       permissions.add(Permission.MESSAGE_WRITE);

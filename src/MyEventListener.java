@@ -5,8 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
+
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.*;
+import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.core.events.message.*;
 import net.dv8tion.jda.core.events.user.UserTypingEvent;
@@ -25,6 +27,11 @@ public class MyEventListener extends ListenerAdapter {
     this.db = db;
   }
 
+  public void onGuildJoin(GuildJoinEvent event) {
+      TextChannel general_channel=event.getGuild().getTextChannelsByName("general", true).get(0);
+      general_channel.sendMessage("Hello, I'm the Game-Bot. Please use command **!initbot** to initialise me. ").queue();
+    }
+  
   public void onGuildMemberJoin(GuildMemberJoinEvent event) {
     try {
       this.db.initPlayer(event.getUser());

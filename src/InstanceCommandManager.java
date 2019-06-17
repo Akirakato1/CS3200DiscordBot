@@ -71,6 +71,9 @@ public class InstanceCommandManager extends CommandManager {
         commandEvent.getTextChannel().delete().queue();
       }
       else {
+        channel.sendMessage(commandEvent.getAuthor().getName()+" has left your struggle. \nRemaining free spots: "+
+            db.getInstanceField("Instance", "free_spots", channel.getIdLong()).get(0)).queue();
+            
         System.out.println("Removing permissions");
         // Not the last member. Simply remove permissions.
         ArrayList<Permission> permissions = new ArrayList<Permission>();
@@ -118,7 +121,7 @@ public class InstanceCommandManager extends CommandManager {
           // Remove from cache
           gameThreads.remove(key);
           //TODO: set gameStarted to false on db
-          
+
         }
       }
     }
