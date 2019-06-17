@@ -215,5 +215,10 @@ public class QuizBowlManager extends GameManager {
     // TODO Auto-generated method stub
     
   }
+  
+  @Override
+  protected void quit(Long instanceID) {
+    // TODO: Delete all relevant database entries
+  }
 
 }

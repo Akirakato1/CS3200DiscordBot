@@ -55,10 +55,18 @@ public abstract class GameManager extends CommandManager {
   
   abstract boolean canPause(Long instanceID);
   
+  // Code for starting the game. If an argument is invalid, throw an error following this format:
+  // "[invalid index]:description"
   abstract void start(String[] arguments, Long instanceID) throws Exception;
   
+  protected void quit(Long instanceID) {}
+  
   protected void endGame(Long instanceID, HashMap<Long, Integer> scores, boolean highIsGood) {
-    //TODO: Update leaderboard using score info.
+    quit(instanceID);
+    int gameType = Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0));
+    for(Long player: scores.keySet()) {
+      db.updateLeaderboard(player, gameType, scores.get(player), highIsGood);
+    }
     
     // Add finished thread to status list.
     status.put(instanceID, true);

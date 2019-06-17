@@ -21,10 +21,10 @@ public class InstanceCommandManager extends CommandManager {
   public InstanceCommandManager(Database db) {
     super(db);
     // Populate help function
-    commands.add(new String[] { "!help", "context(optional)" });
-    commands.add(new String[] { "!invite", "[\\@recipient(s)]" });
-    commands.add(new String[] { "!leave" });
-    commands.add(new String[] { "!start" });
+    commands.add(new String[] { "help", "context(optional)" });
+    commands.add(new String[] { "invite", "[\\@recipient(s)]" });
+    commands.add(new String[] { "leave" });
+    commands.add(new String[] { "start" });
     
     // Initialize GameManagers
     gameManagers = new ArrayList<GameManager>();
@@ -94,11 +94,17 @@ public class InstanceCommandManager extends CommandManager {
       }
     }
     else if (command.equals("start")) {
-      // TODO: Implement database functions and game functions
-      // Find the correct gameManager to send the request
-      // Call start(arguments)
-      // Catch and display exception on failure
-      // Add to the redirection cache on success
+      try {
+        Long instanceID = commandEvent.getChannel().getIdLong();
+        gameThreads.put(instanceID, Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0)));
+      }catch(Exception e) {
+        String message = e.getMessage();
+        int index = Integer.parseInt(message.substring(0, message.indexOf(":")-1));
+        String description = message.substring(message.indexOf(":")+1);
+        message = this.errorMessage(command, arguments, index, description);
+        channel.sendMessage(message).queue();
+        return;
+      }
     }
     else if (command.equals("help")) {
       channel.sendMessage(help(arguments)).queue();
@@ -128,7 +134,7 @@ public class InstanceCommandManager extends CommandManager {
           // Remove from cache
           gameThreads.remove(key);
           //TODO: set gameStarted to false on db
-
+          db.updateInstanceField("Instance", "started", "0", event.getChannel().getIdLong());
         }
       }
     }
