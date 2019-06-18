@@ -26,7 +26,13 @@ public class InstanceCommandManager extends CommandManager {
     commands.add(new String[] { "invite", "[\\@recipient(s)]" });
     commands.add(new String[] { "leave" });
     commands.add(new String[] { "start" });
-
+    
+    commands.add(new String[] { "createteam","teamname"});
+    commands.add(new String[] { "teams" });
+    commands.add(new String[] { "leaveteam" });
+    commands.add(new String[] {"jointeam","teamname"});
+    commands.add(new String[] { "autoassign" });
+    
     // Initialize GameManagers
     gameManagers = new ArrayList<GameManager>();
     gameManagers.add(new QuizBowlManager(db));
@@ -60,6 +66,102 @@ public class InstanceCommandManager extends CommandManager {
         db.createInvite(commandEvent.getAuthor().getIdLong(), m.getUser().getIdLong(),
             channel.getIdLong());
       }
+    }
+    else if (command.equals("teams")) {
+      ArrayList<Integer> team_ids=db.getTeamIDInstance(channel.getIdLong());
+      if(team_ids==null) {
+        channel.sendMessage("No teams in this instance yet").queue();;
+        return;
+      }
+      String message="";
+      for(int team_id:team_ids) {
+        String team_name=db.getFieldWithConditionTable("Team", "team_name", "team_id="+team_id);
+        message=message+"\n Team **"+team_name+"** \n";
+        ArrayList<Long> player_ids=db.getTeamPlayerID(team_id);
+        if(player_ids!=null) {
+        for(long player_id:player_ids) {
+          message=message+commandEvent.getGuild().getMemberById(player_id).getUser().getName()+"  ";
+        }
+        }
+      }
+      
+      channel.sendMessage(message).queue();
+      return;
+    }
+    else if(command.equals("createteam")) {
+      if(db.getTeamIDbyName(channel.getIdLong(), arguments[0])!=null) {
+        channel.sendMessage("Error Team name already exists").queue();
+        return;
+      }
+      db.createTeam(channel.getIdLong(), arguments[0]);
+    }
+    else if (command.equals("leaveteam")) {
+      String team_id=db.getFieldWithConditionTable("Plays", "team_id", 
+          "player_id="+commandEvent.getAuthor().getIdLong()+" and instance_id="+channel.getIdLong());
+      if(team_id==null) {
+        channel.sendMessage("You're not in a team").queue();
+        return;
+      }
+      
+      db.updatePlaysTeamID(channel.getIdLong(), commandEvent.getAuthor().getIdLong(), null);
+      return;
+    }
+    else if (command.equals("jointeam")) {
+      Integer team_to_join=db.getTeamIDbyName(channel.getIdLong(), arguments[0]);
+      if(team_to_join==null) {
+        channel.sendMessage("The team does not exist").queue();
+        return;
+      }
+      
+      db.setTeamIDPlays(channel.getIdLong(), commandEvent.getAuthor().getIdLong(), team_to_join);
+      return;
+    }
+    else if (command.equals("autoassign")) {
+      ArrayList<Integer> team_ids=db.getTeamIDInstance(channel.getIdLong());
+      ArrayList<Long> players_with_team=new ArrayList<Long>();
+      ArrayList<Long> all_players=db.getAllPlayerInstance(channel.getIdLong());
+      ArrayList<Long> players_need_assign=new ArrayList<Long>();
+      if(team_ids==null) {
+        channel.sendMessage("No teams to autoassign to").queue();
+        return;
+      }
+      ArrayList<Integer> num_players=new ArrayList<Integer>();
+      for(int team_id:team_ids) {
+        ArrayList<Long> player_ids=db.getTeamPlayerID(team_id);
+        if(player_ids!=null) {
+          num_players.add(0);
+        }else {
+          players_with_team.addAll(player_ids);
+          num_players.add(player_ids.size());
+        }
+      }
+      int num_of_teams=team_ids.size();
+     int total_players= db.getNumMembers(channel.getIdLong());
+     int players_in_each_team=(int) Math.ceil(total_players/num_of_teams);
+     for(int i=0;i<team_ids.size();i++) {
+       num_players.set(i,players_in_each_team-num_players.get(i));
+     }
+     
+     for(long player_id:all_players) {
+       if(players_with_team.contains(player_id)) {
+         players_need_assign.add(player_id);
+       }
+     }
+     int shift=0;
+     for(int i=0;i<players_need_assign.size();i++) {
+       for(int j=0;j<team_ids.size();j++) {
+       if(num_players.get((i+shift)%num_of_teams)<1) {
+         shift++;
+       }else {
+         db.setTeamIDPlays(channel.getIdLong(), players_need_assign.get(i), team_ids.get((i+shift)%num_of_teams));
+         break;
+       }
+       }
+     }
+     
+     channel.sendMessage("AutoAssign complete").queue();
+     
+      return;
     }
     else if (command.equals("leave")) {
       // Leave the instance

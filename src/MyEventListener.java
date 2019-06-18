@@ -54,7 +54,7 @@ public class MyEventListener extends ListenerAdapter {
 
     // Assume it is a command, redirect to appropriate command manager.
     String category = event.getTextChannel().getParent().getName();
-    System.out.println(category);
+    //System.out.println(category);
     if (gametype_names.contains(category)) {
       // It is an instance message.
       
@@ -134,10 +134,10 @@ public class MyEventListener extends ListenerAdapter {
     }
     */
   }
-
+/*
   public void onUserTyping(UserTypingEvent event) {
     MessageChannel channel = event.getChannel();
     channel.sendMessage(event.getUser().getName() + " started typing at " + event.getTimestamp())
         .queue();
-  }
+  }*/
 }

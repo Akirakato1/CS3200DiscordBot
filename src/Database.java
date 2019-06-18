@@ -57,7 +57,35 @@ public class Database {
       e.printStackTrace();
     }
   }
+  
+  public Integer getTeamIDbyName(long instance_id, String name) {
+    String pcondition="where instance_id="+instance_id+" and team_name='"+name+"'";
+    return Integer.parseInt(this.getFieldWithConditionTable("Team", "team_id", pcondition));
+  }
+ 
 
+  public ArrayList<Long> getTeamPlayerID(int team_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command="select Plays.player_id from "
+          + "Plays inner join Team on Team.team_id=Plays.team_id";
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<Long> teaminfo = new ArrayList<Long>();
+      while (result.next()) {
+        teaminfo.add(result.getLong("player_id"));
+      }
+      if (teaminfo.size() == 0) {
+        return null;
+      }
+      return teaminfo;
+    }
+    catch (SQLException e) {
+      System.out.println("Could not retrieve team players information");
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
   public void leaveInstance(long player_id, long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
@@ -82,7 +110,7 @@ public class Database {
       System.out.println("Created Plays for " + player_id + " in " + channel_id);
     }
     catch (SQLException e) {
-      System.out.println("could not reated Plays for " + player_id + " in " + channel_id);
+      System.out.println("could not created Plays for " + player_id + " in " + channel_id);
       e.printStackTrace();
     }
   }
@@ -115,6 +143,19 @@ public class Database {
     }
   }
 
+  public void createTeam(long instance_id, String team_name) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command="insert into Team (instance_id, team_name) values ("+instance_id+", '"+team_name+"')";
+      statement.executeUpdate(command);
+      System.out.println("Created team in database: " + team_name);
+    }
+    catch (SQLException e) {
+      System.out.println("could not create instance in database: " + team_name);
+      e.printStackTrace();
+    }
+  }
+  
   public void createInstance(String privacy, String game_id, int freespot, long channel_id,
       long server_id,String instance_name) {
     try {
@@ -279,6 +320,28 @@ public class Database {
     }
   }
   
+  public ArrayList<Long> getAllPlayerInstance(long instance_id){
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select player_id from Plays where instance_id="+instance_id;
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<Long> player_ids = new ArrayList<Long>();
+      while (result.next()) {
+        player_ids.add(result.getLong("player_id"));
+      }
+      if (player_ids.size() == 0) {
+        return null;
+      }
+      return player_ids;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving all player id in given instance");
+      e.printStackTrace();
+      return null;
+    }
+    
+  }
+  
   public ArrayList<Long> getInstanceIDbyName(String name) {
     try {
       Statement statement = this.conn.createStatement();
@@ -347,6 +410,20 @@ public class Database {
     }
   }
 
+  public void setTeamIDPlays(long instance_id, long player_id, int team_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "update Plays set team_id="+team_id+" where instance_id="+instance_id+
+          " and player_id="+player_id;
+      statement.executeUpdate(command);
+      System.out.println("set team succesfully");
+    }
+    catch (SQLException e) {
+      System.out.println("Error when setting team");
+      e.printStackTrace();
+    }
+  }
+  
   public void setScore(long player_id, int game_id, int score, boolean highIsGood) {
     try {
       Statement statement = this.conn.createStatement();
@@ -376,7 +453,7 @@ public class Database {
       
     }
     catch (SQLException e) {
-      System.out.println("Error when retrieving instance record");
+      System.out.println("Error when setting score");
       e.printStackTrace();
     }
   }
@@ -389,6 +466,20 @@ public class Database {
     }
     catch (SQLException e) {
       e.printStackTrace();
+    }
+  }
+  
+  public void updatePlaysTeamID(long instance_id, long player_id, String newTeamID) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String update_field = "update Plays set team_id="+newTeamID+" where instance_id="+instance_id+
+          " and player_id="+player_id;
+      statement.executeUpdate(update_field);
+      System.out.println("updated teamid in play");
+    }
+    catch (SQLException e) {
+      e.printStackTrace();
+      System.out.println("could not updated teamid in play");
     }
   }
   
@@ -466,6 +557,27 @@ public class Database {
     PreparedStatement statement = this.conn.prepareStatement(command);
     ResultSet result = statement.executeQuery();
     return result;
+  }
+  
+  public ArrayList<Integer> getTeamIDInstance(long instance_id){
+    try {
+      Statement statement = this.conn.createStatement();
+      String command = "Select team_id from Team where instance_id="+instance_id;
+      ResultSet result = statement.executeQuery(command);
+      ArrayList<Integer> record = new ArrayList<Integer>();
+      while (result.next()) {
+        record.add(result.getInt("team_id"));
+      }
+      if (record.size() == 0) {
+        return null;
+      }
+      return record;
+    }
+    catch (SQLException e) {
+      System.out.println("Error when retrieving team ids by instance id");
+      e.printStackTrace();
+      return null;
+    }
   }
   
   public String getFieldWithConditionTable(String tablename, String field, String PrimaryCondition) {
