@@ -26,6 +26,7 @@ public class GeneralCommandManager extends CommandManager{
     commands.add(new String[] { "instances" });
     commands.add(new String[] { "myhighscores" });
     commands.add(new String[] { "leaderboard", "gametype", "limitnumber(optional)" });
+    commands.add(new String[] {"gametypes"});
   }
 
   // Process a command. Assume the command begins with the proper delimiter.
@@ -69,6 +70,19 @@ public class GeneralCommandManager extends CommandManager{
        }
        
       channel.sendMessage("Game Bot is initialised").queue();  
+    }
+    else if(command.equals("gametypes")){
+      ArrayList<String> gametype_names=db.getFieldFromTable("GameType","name");
+      ArrayList<String> gametype_description=db.getFieldFromTable("GameType", "description");
+      
+      String message="";
+      
+      for(int i=0;i<gametype_names.size();i++) {
+       message=message+"\n**" +gametype_names.get(i)+"** Description: "+gametype_description.get(i);
+      }
+      
+      channel.sendMessage(message).queue();
+      return;
     }
     else if(command.equals("myinvites")) {
       ArrayList<ArrayList<String>> invites=this.db.getInvites(commandEvent.getAuthor().getIdLong());

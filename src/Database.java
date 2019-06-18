@@ -392,6 +392,18 @@ public class Database {
     }
   }
   
+  public void updatePlayerInstanceField(String table_name, String field_name, String field_value, long player_id,long instance_id) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String update_field = "Update "+table_name+" set "+field_name+"="+field_value+" "
+          + "where player_id="+player_id+" and instance_id="+instance_id;
+      statement.executeUpdate(update_field);
+    }
+    catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+  
   public void updatePlayers(JDA api) throws SQLException {
     ArrayList<String> member_id = this.getFieldFromTable("Player", "player_id");
     List<Guild> guilds = api.getGuilds();
@@ -455,7 +467,24 @@ public class Database {
     ResultSet result = statement.executeQuery();
     return result;
   }
-
+  
+  public String getFieldWithConditionTable(String tablename, String field, String PrimaryCondition) {
+    try {
+      String command = "Select " + field + " from " + tablename+" where "+PrimaryCondition;
+      ResultSet result = this.getResultSet(command);
+      String output=null;
+      while (result.next()) {
+        output=result.getString(1);
+      }
+      return output;
+    }
+    catch (SQLException e) {
+      System.out.println("ERROR: Could not retrieve " + field + " from " + tablename+" where "+PrimaryCondition);
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
   public ArrayList<String> getFieldFromTable(String tablename, String field) {
     try {
       String command = "Select " + field + " from " + tablename;

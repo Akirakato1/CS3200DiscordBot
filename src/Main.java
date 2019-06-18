@@ -7,9 +7,10 @@ public class Main {
   public static void main(String[] args) throws Exception{
     try {
       //bot invite:
-      //https://discordapp.com/api/oauth2/authorize?client_id=588425785920978969&permissions=2146958839&scope=bot
+      //https://discordapp.com/api/oauth2/authorize?client_id=588425785920978969&permissions=8&scope=bot
       JDA api = new JDABuilder(AccountType.BOT).setToken("NTg4NDI1Nzg1OTIwOTc4OTY5.XQFB9Q.Oi4thZhK0qPXpH4_Hg9xXqny5Ys").build();
-      Database db=new Database("sql9295737","yXVpw9ICij","sql9.freemysqlhosting.net",3306,"sql9295737");
+      //Database db=new Database("sql9295737","yXVpw9ICij","sql9.freemysqlhosting.net",3306,"sql9295737");
+      Database db=new Database("root","Se1freliance","localhost",3306,"gamebot");
       api.addEventListener(new MyEventListener(db));
       api.awaitReady();
       db.updatePlayers(api);
