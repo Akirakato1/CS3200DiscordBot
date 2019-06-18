@@ -46,7 +46,7 @@ public class DOneHundredManager extends GameManager {
     return true;
   }
 
-  String start(String[] arguments, Long instanceID) throws Exception {
+  String start(String[] arguments, Long instanceID, TextChannel channel) throws Exception {
     System.out.println(instanceID);
     globalRolls.put(instanceID, new HashMap<Long, Integer>());
     return "Welcome to 1d100! The rules are simple! Type \"!roll\" to roll a d100! You only get one try, tho.";
