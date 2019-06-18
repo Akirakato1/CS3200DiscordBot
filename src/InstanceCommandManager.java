@@ -205,7 +205,7 @@ public class InstanceCommandManager extends CommandManager {
           Integer.parseInt(db.getInstanceField("Instance", "game_id", instanceID).get(0)) - 1);
       GameManager gm = gameManagers.get(gameThreads.get(instanceID));
       try {
-        String startMessage = gm.start(arguments, instanceID);
+        String startMessage = gm.start(arguments, instanceID, channel);
         channel.sendMessage(startMessage).queue();
         db.updateInstanceField("Instance", "started", "1", instanceID);
       }
@@ -263,7 +263,7 @@ public class InstanceCommandManager extends CommandManager {
       gameManagers.get(gameThreads.get(key)).processCommand(event);
       try {
 
-        gameManagers.get(gameThreads.get(key)).start(new String[] {}, key);
+        gameManagers.get(gameThreads.get(key)).start(new String[] {}, key, event.getTextChannel());
       }
       catch (Exception e) {
         e.printStackTrace();
