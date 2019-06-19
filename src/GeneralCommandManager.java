@@ -155,7 +155,7 @@ public class GeneralCommandManager extends CommandManager{
           visibility="public";
         }
         if(Integer.parseInt(instance.get(3))==1) {
-          visibility="Started";
+          started="Started";
         }
         message=message+"\n**Instance Type:** "+textc.getParent().getName()+" **Instance name:** "+textc.getName()+" **Free spots:** "+freespots
         +" **"+visibility+"** "+started;

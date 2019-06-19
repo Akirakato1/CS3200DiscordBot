@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import net.dv8tion.jda.core.entities.Member;
@@ -17,7 +18,7 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class QuizBowlManager extends GameManager {
   HashMap<Long, HashMap<String, ScheduledFuture>> globalTimers;
-  ScheduledExecutorService executorService;
+  ScheduledThreadPoolExecutor executorService;
 
   private static final int CORRECT_SCORE = 10;
   private static final int FAST_BONUS = 5;
@@ -26,11 +27,13 @@ public class QuizBowlManager extends GameManager {
   private static final int ANSWER_DELAY = 10000;
   private static final int DELAY_BETWEEN_ROUNDS = 2000;
   private static final float SPELLING_THRESHOLD = 0.1f;
+  private static final int WORDS_AT_A_TIME = 5;
 
   public QuizBowlManager(Database db) {
     super(db);
-    globalTimers=new HashMap<Long, HashMap<String, ScheduledFuture>>();
-    executorService=Executors.newScheduledThreadPool(1);
+    globalTimers = new HashMap<Long, HashMap<String, ScheduledFuture>>();
+    executorService = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(2);
+    executorService.setRemoveOnCancelPolicy(true);
   }
 
   public void update(MessageReceivedEvent message) {
@@ -40,23 +43,31 @@ public class QuizBowlManager extends GameManager {
     TextChannel channel = message.getTextChannel();
     if (timers.containsKey("pingTimeUp")) {
       // In the ping stage
-      ping(channel, message.getMember(), session);
+      if (!timers.get("criticalPoint").isDone()) {
+        // Ping before critical point
+        ping(channel, message.getMember(), session, true);
+      }
+      else {
+        // Answering after the critical point
+        ping(channel, message.getMember(), session, false);
+
+      }
     }
     else {
       Long playerID = message.getAuthor().getIdLong();
-      if (timers.containsKey("criticalPoint")) {
-        // Answering before the critical point has been reached
+      if (timers.containsKey("answerTimeUpFast")) {
+        // Answering after the critical point has been reached
         processAnswer(channel, session, message.getMessage().getContentStripped(), playerID, true);
-
       }
-      else if (timers.containsKey("answerTimeUp")) {
+      else if (timers.containsKey("answerTimeUpSlow")) {
         // Answering after the critical point has been reached
         processAnswer(channel, session, message.getMessage().getContentStripped(), playerID, false);
       }
     }
+
   }
 
-  public void ping(TextChannel channel, Member author, Long session) {
+  public void ping(TextChannel channel, Member author, Long session, boolean fast) {
     // Check for ping permissions
     int teamID = Integer.parseInt(db.getInstancedPlayerField("QuizBowl_Player", "team_id", session,
         author.getUser().getIdLong()));
@@ -68,8 +79,19 @@ public class QuizBowlManager extends GameManager {
 
       // Clear timers
       HashMap<String, ScheduledFuture> timers = globalTimers.get(session);
+      System.out.println("Futures: " + timers.size());
       for (ScheduledFuture future : timers.values()) {
-        future.cancel(true);
+        if (!future.isDone()) {
+          if (!future.cancel(true)) {
+            System.out.println("Could not cancel future!");
+          }
+          else {
+            System.out.println("Successfully cancelled future");
+          }
+        }
+        else {
+          System.out.println("Future was already completed.");
+        }
       }
       timers.clear();
       // Set database fields
@@ -84,7 +106,14 @@ public class QuizBowlManager extends GameManager {
         }
       };
       ScheduledFuture atof = executorService.schedule(ato, ANSWER_DELAY, TimeUnit.MILLISECONDS);
-      timers.put("answerTimeUp", atof);
+      String tun = "answerTimeUp";
+      if (fast) {
+        tun = tun.concat("Fast");
+      }
+      else {
+        tun = tun.concat("Slow");
+      }
+      timers.put(tun, atof);
 
       // Acknowledge
       channel.sendMessage(author.getEffectiveName() + " buzzed first! You may answer.").queue();
@@ -116,7 +145,7 @@ public class QuizBowlManager extends GameManager {
       globalTimers.get(session).clear();
       int qid = Integer
           .parseInt(db.getInstanceField("QuizBowl_Single", "current_q", session).get(0));
-      String correctAnswer = db.getFieldWithConditionTable("QuizBowl_Questions", "field",
+      String correctAnswer = db.getFieldWithConditionTable("QuizBowl_Questions", "answer",
           "qbq_id=" + qid);
       String[] delimiters = { "&", "; accept", "[accept", "prompt" };
       int trimPoint = correctAnswer.length() - 1;
@@ -145,14 +174,14 @@ public class QuizBowlManager extends GameManager {
       }
 
       // Apply info to database and write response
-      String message = "Sorry! The correct answer was " + correctAnswer;
+      String message = "Sorry! Better luck next time!";
       if (correct) {
-        message = "Correct! You won " + CORRECT_SCORE + " points!";
+        message = "Correct! You won " + CORRECT_SCORE + " points!\nThe correct answer was: "+correctAnswer;
         db.updatePlayerInstanceField("QuizBowl_Player", "correct_answers", "correct_answers+1",
             session, speaker);
         if (fast) {
           message = "Impressive! You answered before the power mark, earning you "
-              + (CORRECT_SCORE + FAST_BONUS) + " points!";
+              + (CORRECT_SCORE + FAST_BONUS) + " points!\nThe correct answer was: "+correctAnswer;
           db.updatePlayerInstanceField("QuizBowl_Player", "speed_bonus", "speed_bonus+1", session,
               speaker);
         }
@@ -205,7 +234,7 @@ public class QuizBowlManager extends GameManager {
       endGame(channel, sessionID, scores, true);
       return;
     }
-    
+
     System.out.println("updating buzzables");
     // Clear team restrictions on answering
     db.updateInstanceField("QuizBowl_Team", "buzzable", "1", sessionID);
@@ -216,9 +245,12 @@ public class QuizBowlManager extends GameManager {
     // Select new question
     ArrayList<String> question = db.getRandomTuple("QuizBowl_Questions");
     int qid = Integer.parseInt(question.get(0));
-    
+
+    // Update question to the database
+    db.updateInstanceField("QuizBowl_Single", "current_q", "" + qid, sessionID);
+
     System.out.println("read q");
-    readyQuestion(channel, question.get(1), qid, sessionID, pDelay);
+    readyQuestion(channel, question.get(2), qid, sessionID, pDelay);
   }
 
   // Helper method for both readying a new question and repeating the previous
@@ -236,9 +268,8 @@ public class QuizBowlManager extends GameManager {
       System.out.println("Couldn't update questions left!");
       e.printStackTrace();
     }
-    
+
     System.out.println("updated questions left");
-    
 
     ArrayList<String> qWords = new ArrayList<String>();
     qWords.addAll(Arrays.asList(question.split(" ")));
@@ -254,7 +285,7 @@ public class QuizBowlManager extends GameManager {
       word = word.trim();
       qWords.set(i, word);
     }
-    
+
     System.out.println("processed question");
     // Remove empty words, if there are any. Go backwards to avoid funny index stuff
     // on deletion.
@@ -266,57 +297,80 @@ public class QuizBowlManager extends GameManager {
         qWords.remove(i);
       }
     }
-    
+
     System.out.println("removed empty words");
-    
+    long mid = channel.sendMessage("Ready?").complete().getIdLong();
+
     // Assemble updates into Futures and apply to the HashMap
     String question_so_far = "";
     long delay = 0;
+    int expectedSize = 0;
+    boolean containsCriticalPoint = false;
     for (int i = 0; i < qWords.size(); i++) {
       String word = qWords.get(i);
-      question_so_far = question_so_far.concat(word);
+      question_so_far = question_so_far.concat(word + " ");
       delay += SPEECH_RATE;
-      // Apply string to a message
-      ScheduledFuture messageSend = channel.sendMessage(question_so_far).queueAfter(delay + pDelay,
-          TimeUnit.MILLISECONDS);
-      String mName;
-      ;
+      // Check for critical point
       if (i == keyPoint) {
-        mName = "criticalPoint";
+        containsCriticalPoint = true;
       }
-      else {
-        mName = Integer.toHexString(i);
+      // Apply string to a message
+      if (i % WORDS_AT_A_TIME == 0 || i == qWords.size() - 1) {
+        String messageText = question_so_far;
+        Runnable smR = new Runnable() {
+          public void run() {
+            channel.editMessageById(mid, messageText).queue();
+
+          }
+        };
+        ScheduledFuture messageSend = executorService.schedule(smR, delay + pDelay,
+            TimeUnit.MILLISECONDS);
+        String mName;
+        expectedSize++;
+        if (containsCriticalPoint) {
+          mName = "criticalPoint";
+          containsCriticalPoint = false;
+        }
+        else {
+          mName = Integer.toHexString(i);
+        }
+        globalTimers.get(sessionID).put(mName, messageSend);
       }
-      globalTimers.get(sessionID).put(mName, messageSend);
     }
-    
+    System.out.println("Expected size: " + expectedSize + 1);
     System.out.println("assemble update into futre hashmap");
-    
+
     // Prepare time up event
     Runnable timeUp = new Runnable() {
       public void run() {
         pingTimeUp(channel, sessionID);
       }
     };
-    
+
     System.out.println("prepare time up event");
     ScheduledFuture timeUpFuture = executorService.schedule(timeUp, delay + PING_DELAY,
         TimeUnit.MILLISECONDS);
     // Add to Hash
-    globalTimers.get(sessionID).put("answerTimeUp", timeUpFuture);
-    
+    globalTimers.get(sessionID).put("pingTimeUp", timeUpFuture);
+
+    System.out.println("Actual size: " + globalTimers.get(sessionID).size());
+
     System.out.println("finished with readyq");
   }
 
   // Handles time up for pinging
   void pingTimeUp(TextChannel channel, Long instanceID) {
+    System.out.println("Called Ping Time Up");
     int qid = Integer
         .parseInt(db.getInstanceField("QuizBowl_Single", "current_q", instanceID).get(0));
     String answer = "";
     try {
+      System.out.println("Getting result set");
       ResultSet rs = db.getResultSet("SELECT answer FROM QuizBowl_Questions WHERE qbq_id = " + qid);
       rs.next();
       answer = rs.getString(1);
+      rs.close();
+      System.out.println("Got result string");
     }
     catch (SQLException e) {
       System.out.println("Couldn't retrieve answer?!");
@@ -325,6 +379,7 @@ public class QuizBowlManager extends GameManager {
 
     // Print the answer!
     channel.sendMessage("Time up! the correct answer was: \n" + answer).queue();
+    System.out.println("Correct answer: " + answer);
 
     readyNextQuestion(channel, instanceID, DELAY_BETWEEN_ROUNDS);
 
@@ -342,6 +397,20 @@ public class QuizBowlManager extends GameManager {
       System.out.println("Couldn't clear answering");
       e.printStackTrace();
     }
+    /*
+    String correctAnswer = db.getFieldWithConditionTable("QuizBowl_Questions", "answer",
+        "qbq_id=" + qid);
+    String[] delimiters = { "&", "; accept", "[accept", "prompt" };
+    int trimPoint = correctAnswer.length() - 1;
+    for (String s : delimiters) {
+      int index = correctAnswer.indexOf(s);
+      if (index != -1) {
+        trimPoint = Math.min(trimPoint, index);
+      }
+    }
+    correctAnswer = correctAnswer.substring(0, trimPoint);
+    String message = "You didn't answer quick enough! The correct answer was: "+correctAnswer;
+    */
   }
 
   private HashMap<Long, Integer> calculateScores(TextChannel channel, Long sessionID) {
@@ -389,11 +458,11 @@ public class QuizBowlManager extends GameManager {
       throw new Exception(
           this.errorMessage("start", arguments, 0, arguments[1] + " is not an integer"));
     }
-    if (numberOfQuestions < 10) {
+    if (targetScore < 10) {
       throw new Exception(
-          errorMessage("start", arguments, 0, arguments[0] + " should be at least 10"));
+          errorMessage("start", arguments, 1, arguments[1] + " should be at least 10"));
     }
-    
+
     // Create Future hashmap for session
     globalTimers.put(instanceID, new HashMap<String, ScheduledFuture>());
 
@@ -426,7 +495,7 @@ public class QuizBowlManager extends GameManager {
           "player_id, instance_id, correct_answers, missed_answers, speed_bonus, buzzable, team_id",
           pIDS + ", " + instanceID + ", 0, 0, 0, 1, " + tID);
     }
-    
+
     System.out.println("ready next q");
     // Ready first question
     this.readyNextQuestion(channel, instanceID, DELAY_BETWEEN_ROUNDS);
@@ -457,6 +526,11 @@ public class QuizBowlManager extends GameManager {
     String[] winner = this.getTopTeam(instanceID, scores);
     channel.sendMessage("Team " + winner[1] + " won with " + winner[2] + " points!").queue();
 
+  }
+
+  @Override
+  public String[] startArguments() {
+    return new String[] {"Max questions", "Target score"};
   }
 
 }

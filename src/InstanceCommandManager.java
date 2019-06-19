@@ -251,6 +251,29 @@ public class InstanceCommandManager extends CommandManager {
       }
     }
     else if (command.equals("help")) {
+      if(arguments.length > 0) {
+        if(arguments[0].equals("start") || arguments[0].equals("!start")) {
+          // Asking for help on start!
+          // Get the appropriate game manager
+          int gameID = Integer
+              .parseInt(db.getIDbyNameGameType(channel.getParent().getName()));
+          System.out.println(gameID);
+          String[] sargs = gameManagers.get(gameID-1).startArguments();
+          String message="!start: ";
+          if(sargs.length == 0) {
+            message = message+"This method has no arguments.";
+          }else {
+            for (int i = 0; i < sargs.length; i++) {
+              if (i > 0) {
+                message = message.concat(", ");
+              }
+              message = message.concat(sargs[i]);
+            }
+          }
+          channel.sendMessage(message).queue();
+          return;
+        }
+      }
       channel.sendMessage(help(arguments)).queue();
     }
     else {

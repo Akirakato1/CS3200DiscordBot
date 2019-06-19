@@ -52,4 +52,9 @@ public class DOneHundredManager extends GameManager {
     return "Welcome to 1d100! The rules are simple! Type \"!roll\" to roll a d100! You only get one try, tho.";
   }
 
+  @Override
+  public String[] startArguments() {
+    return new String[0];
+  }
+
 }

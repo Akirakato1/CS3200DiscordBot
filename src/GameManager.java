@@ -124,5 +124,8 @@ public abstract class GameManager extends CommandManager {
     // Convert topTeam from team_id to team_name
     return new String[] {topTeam, teamNames.get(topTeam), ""+topTeamScore};
   }
+  
+  // Provides the names of all arguments start() takes.
+  public abstract String[] startArguments();
 
 }
