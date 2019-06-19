@@ -52,23 +52,27 @@ public class QuizBowlManager extends GameManager {
       }
     }
   }
-  
+
   public void ping(TextChannel channel, Member author, Long session) {
- // Check for ping permissions
-    int teamID = Integer.parseInt(db.getInstancedPlayerField("QuizBowl_Player", "team_id", session, author.getUser().getIdLong()));
-    String teamPermission = db.getFieldWithConditionTable("QuizBowl_Team", "buzzable", "instance_id="+session+" AND team_id="+teamID);
-    String personalPermission = db.getInstancedPlayerField("QuizBowl_Player", "buzzable", session, author.getUser().getIdLong());
-    if(teamPermission.equals("1") && personalPermission.equals("1")) {
-      
+    // Check for ping permissions
+    int teamID = Integer.parseInt(db.getInstancedPlayerField("QuizBowl_Player", "team_id", session,
+        author.getUser().getIdLong()));
+    String teamPermission = db.getFieldWithConditionTable("QuizBowl_Team", "buzzable",
+        "instance_id=" + session + " AND team_id=" + teamID);
+    String personalPermission = db.getInstancedPlayerField("QuizBowl_Player", "buzzable", session,
+        author.getUser().getIdLong());
+    if (teamPermission.equals("1") && personalPermission.equals("1")) {
+
       // Clear timers
       HashMap<String, ScheduledFuture> timers = globalTimers.get(session);
-      for(ScheduledFuture future : timers.values()) {
+      for (ScheduledFuture future : timers.values()) {
         future.cancel(true);
       }
       timers.clear();
       // Set database fields
-      db.updateInstanceField("QuizBowl_Single", "answering", ""+author.getUser().getIdLong(), session);
-      
+      db.updateInstanceField("QuizBowl_Single", "answering", "" + author.getUser().getIdLong(),
+          session);
+
       // Add answer time-out Future
       Runnable ato = new Runnable() {
         public void run() {
@@ -78,13 +82,14 @@ public class QuizBowlManager extends GameManager {
       };
       ScheduledFuture atof = executorService.schedule(ato, ANSWER_DELAY, TimeUnit.MILLISECONDS);
       timers.put("answerTimeUp", atof);
-      
+
       // Acknowledge
-      channel.sendMessage(author.getEffectiveName()+" buzzed first! You may answer.");
+      channel.sendMessage(author.getEffectiveName() + " buzzed first! You may answer.");
     }
     else {
       // Wrong team
-      channel.sendMessage(author.getEffectiveName()+"! You can't buzz, you're on the wrong team!").queue();
+      channel.sendMessage(author.getEffectiveName() + "! You can't buzz, you're on the wrong team!")
+          .queue();
     }
   }
 
@@ -163,18 +168,22 @@ public class QuizBowlManager extends GameManager {
       }
       else {
         // Repeat this question if incorrect
-        
+
         // Add team buzz restrictions
-        int teamID = Integer.parseInt(db.getInstancedPlayerField("QuizBowl_Player", "team_id", session, speaker));
+        int teamID = Integer
+            .parseInt(db.getInstancedPlayerField("QuizBowl_Player", "team_id", session, speaker));
         try {
-          db.executeUpdate(db.getConnection(), "UPDATE QuizBowl_Team SET buzzable=0 WHERE instance_id="+session+" AND team_id="+teamID);
-        }catch(SQLException e) {
+          db.executeUpdate(db.getConnection(),
+              "UPDATE QuizBowl_Team SET buzzable=0 WHERE instance_id=" + session + " AND team_id="
+                  + teamID);
+        }
+        catch (SQLException e) {
           System.out.println("Couldn't add team buzz restrictions");
           e.printStackTrace();
         }
         // Add player buzz restrictions
         db.updatePlayerInstanceField("QuizBowl_player", "buzzable", "0", speaker, session);
-        
+
         // Ready question repetition
         String question = db.getFieldWithConditionTable("QuizBowl_Questions", "question",
             "qbq_id=" + qid);
@@ -332,63 +341,74 @@ public class QuizBowlManager extends GameManager {
 
   @Override
   String start(String[] arguments, Long instanceID, TextChannel channel) throws Exception {
-    if(arguments.length != 2) {
+    if (arguments.length != 2) {
       throw new Exception("ERROR: Quiz Bowl expects 2 arguments to start");
     }
     // Get the maximum number of questions
     int numberOfQuestions = 0;
     try {
       numberOfQuestions = Integer.parseInt(arguments[0]);
-    } catch(NumberFormatException e) {
-      throw new Exception(this.errorMessage("start", arguments, 0, arguments[0]+" is not an integer"));
     }
-    if(numberOfQuestions < 1) {
-      throw new Exception(errorMessage("start", arguments, 0, arguments[0]+" should be at least 1"));
+    catch (NumberFormatException e) {
+      throw new Exception(
+          this.errorMessage("start", arguments, 0, arguments[0] + " is not an integer"));
     }
-    
+    if (numberOfQuestions < 1) {
+      throw new Exception(
+          errorMessage("start", arguments, 0, arguments[0] + " should be at least 1"));
+    }
+
     // Get target score
     int targetScore = 0;
     try {
       targetScore = Integer.parseInt(arguments[1]);
-    } catch(NumberFormatException e) {
-      throw new Exception(this.errorMessage("start", arguments, 0, arguments[1]+" is not an integer"));
     }
-    if(numberOfQuestions < 10) {
-      throw new Exception(errorMessage("start", arguments, 0, arguments[0]+" should be at least 10"));
+    catch (NumberFormatException e) {
+      throw new Exception(
+          this.errorMessage("start", arguments, 0, arguments[1] + " is not an integer"));
     }
-    
+    if (numberOfQuestions < 10) {
+      throw new Exception(
+          errorMessage("start", arguments, 0, arguments[0] + " should be at least 10"));
+    }
+
     // Manage and display the teams
-    
+
     // Get the teams associated with the Instance
     ArrayList<String> teams = db.getInstanceField("Teams", "team_id", instanceID);
     ArrayList<String> teamNames = new ArrayList<String>();
-    for(String id : teams) {
-      teamNames.add(db.getFieldWithConditionTable("Teams", "team_name", "team_id="+id));
+    for (String id : teams) {
+      teamNames.add(db.getFieldWithConditionTable("Teams", "team_name", "team_id=" + id));
     }
-    
+
     // Get players
     ArrayList<String> playerIDs = db.getInstanceField("Plays", "player_id", instanceID);
-    
-    
+
     // Add corresponding QuizBowl_Team's
-    for(String tID : teams) {
-      //TODO: Create tuple {team_id, instance_id, buzzable}
+    for (String tID : teams) {
+      db.createTuple("QuizBowl_Team", "team_id, instance_id, buzzable",
+          tID + "," + instanceID + ", 1");
     }
-    
+
     // Initialize QuizBowl_Single tuple
-    // TODO: create tuple {instance_id, current_q, answering, questions_left, target_score}
-    
+    db.createTuple("QuizBowl_Single", "instance_id, questions_left, target_score",
+        instanceID + ", " + numberOfQuestions + ", " + targetScore);
+
     // Initialize QuizBowl_Player's
-    for(String pIDS : playerIDs) {
-      //TODO: Create tuple
+    for (String pIDS : playerIDs) {
+      String tID = db.getInstancedPlayerField("Plays", "team_id", instanceID, Long.parseLong(pIDS));
+      db.createTuple("QuizBowl_Player",
+          "player_id, instance_id, correct_answers, missed_answers, speed_bonus, buzzable, team_id",
+          pIDS + ", " + instanceID + ", 0, 0, 0, 1, " + tID);
     }
-    
-    
-    
+
+    // Ready first question
     this.readyNextQuestion(channel, instanceID, DELAY_BETWEEN_ROUNDS);
+
+    // Finish initialization
     return "Welcome to QuizBowl! Let's get started with the first question.";
   }
-  
+
   @Override
   public int getMinTeams() {
     return 2;
@@ -396,20 +416,20 @@ public class QuizBowlManager extends GameManager {
 
   @Override
   protected void quit(Long instanceID, TextChannel channel, HashMap<Long, Integer> scores) {
-    // TODO: Delete all relevant database entries
+
     // Delete QuizBowl_Teams
-    //TODO: db.deleteInstanceTuple("QuizBowl_Team", instanceID);
-    
+    db.deleteTuple("QuizBowl_Team", "instance_id=" + instanceID);
+
     // Delete QuizBowl_Single
-    // TODO: db.deleteInstanceTuple("QuizBowl_Single", instanceID);
-    
+    db.deleteTuple("QuizBowl_Single", "instance_id=" + instanceID);
+
     // Delete QuizBowl_Player
-    // TODO: db.deleteInstanceTuple("QuizBowl_Player", instanceID);
-    
+    db.deleteTuple("QuizBowl_Player", "instance_id=" + instanceID);
+
     // TODO: display winning team
     String[] winner = this.getTopTeam(instanceID, scores);
-    
-    
+    channel.sendMessage("Team " + winner[1] + " won with " + winner[2] + " points!").queue();
+
   }
 
 }
