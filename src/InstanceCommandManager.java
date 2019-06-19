@@ -89,10 +89,15 @@ public class InstanceCommandManager extends CommandManager {
       return;
     }
     else if(command.equals("createteam")) {
+      if(arguments.length!=1) {
+        channel.sendMessage("invalid number of arguments. need team name").queue();
+        return;
+      }
       if(db.getTeamIDbyName(channel.getIdLong(), arguments[0])!=null) {
         channel.sendMessage("Error Team name already exists").queue();
         return;
       }
+      channel.sendMessage("Created team: "+arguments[0]).queue();
       db.createTeam(channel.getIdLong(), arguments[0]);
     }
     else if (command.equals("leaveteam")) {
@@ -104,9 +109,14 @@ public class InstanceCommandManager extends CommandManager {
       }
       
       db.updatePlaysTeamID(channel.getIdLong(), commandEvent.getAuthor().getIdLong(), null);
+      channel.sendMessage("bailed from team successfully").queue();
       return;
     }
     else if (command.equals("jointeam")) {
+      if(arguments.length!=1) {
+        channel.sendMessage("invalid number of arguments. need team name").queue();
+        return;
+      }
       Integer team_to_join=db.getTeamIDbyName(channel.getIdLong(), arguments[0]);
       if(team_to_join==null) {
         channel.sendMessage("The team does not exist").queue();
@@ -114,45 +124,67 @@ public class InstanceCommandManager extends CommandManager {
       }
       
       db.setTeamIDPlays(channel.getIdLong(), commandEvent.getAuthor().getIdLong(), team_to_join);
+      
+      channel.sendMessage("joined team: "+arguments[0]).queue();
       return;
     }
     else if (command.equals("autoassign")) {
       ArrayList<Integer> team_ids=db.getTeamIDInstance(channel.getIdLong());
-      ArrayList<Long> players_with_team=new ArrayList<Long>();
       ArrayList<Long> all_players=db.getAllPlayerInstance(channel.getIdLong());
       ArrayList<Long> players_need_assign=new ArrayList<Long>();
+      ArrayList<Long> players_with_team=new ArrayList<Long>();
+      
+      //System.out.println(team_ids);
+      //System.out.println(all_players);
+      
       if(team_ids==null) {
         channel.sendMessage("No teams to autoassign to").queue();
         return;
       }
+      //System.out.println("first team member: "+db.getTeamPlayerID(team_ids.get(0)));
+      //System.out.println("second team member: "+db.getTeamPlayerID(team_ids.get(1)));
+      
       ArrayList<Integer> num_players=new ArrayList<Integer>();
       for(int team_id:team_ids) {
+        System.out.print(team_id+" ");
         ArrayList<Long> player_ids=db.getTeamPlayerID(team_id);
-        if(player_ids!=null) {
+        System.out.print(player_ids+" ");
+        if(player_ids==null) {
           num_players.add(0);
         }else {
           players_with_team.addAll(player_ids);
           num_players.add(player_ids.size());
         }
+        System.out.println(num_players);
       }
+      
+      System.out.println(num_players);
+      
       int num_of_teams=team_ids.size();
      int total_players= db.getNumMembers(channel.getIdLong());
+     System.out.println("total_players: "+total_players);
      int players_in_each_team=(int) Math.ceil(total_players/num_of_teams);
+     System.out.println("players_in_each_team: "+players_in_each_team);
      for(int i=0;i<team_ids.size();i++) {
        num_players.set(i,players_in_each_team-num_players.get(i));
      }
      
+    // System.out.println("num_player_still_need_join: "+num_players);
+     
      for(long player_id:all_players) {
-       if(players_with_team.contains(player_id)) {
+       if(!players_with_team.contains(player_id)) {
          players_need_assign.add(player_id);
        }
      }
+     
+     //System.out.println("Plyares still need join: "+players_need_assign);
      int shift=0;
      for(int i=0;i<players_need_assign.size();i++) {
        for(int j=0;j<team_ids.size();j++) {
        if(num_players.get((i+shift)%num_of_teams)<1) {
          shift++;
        }else {
+         num_players.set((i+shift)%num_of_teams,num_players.get((i+shift)%num_of_teams)-1);
          db.setTeamIDPlays(channel.getIdLong(), players_need_assign.get(i), team_ids.get((i+shift)%num_of_teams));
          break;
        }
@@ -179,6 +211,7 @@ public class InstanceCommandManager extends CommandManager {
 
         String freespots = db.getInstanceField("Instance", "free_spots", channel.getIdLong())
             .get(0);
+        
         if (Integer.parseInt(freespots) < 0) {
           freespots = "Infinite";
         }

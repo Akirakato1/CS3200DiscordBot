@@ -59,16 +59,45 @@ public class Database {
   }
   
   public Integer getTeamIDbyName(long instance_id, String name) {
-    String pcondition="where instance_id="+instance_id+" and team_name='"+name+"'";
-    return Integer.parseInt(this.getFieldWithConditionTable("Team", "team_id", pcondition));
+    String pcondition="instance_id="+instance_id+" and team_name='"+name+"'";
+    String result=this.getFieldWithConditionTable("Team", "team_id", pcondition);
+    if(result==null) {
+      return null;
+    }
+    return Integer.parseInt(result);
   }
  
-
+  public void createTuple(String table,String fields, String values) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command="insert into "+table+" ("+fields+") values ("+values+")";
+      statement.executeUpdate(command);
+      System.out.println("create tuple");
+    }
+    catch (SQLException e) {
+      System.out.println("Could not create tuple");
+      e.printStackTrace();
+    }
+  }
+  
+  public void deleteTuple(String table, String condition) {
+    try {
+      Statement statement = this.conn.createStatement();
+      String command="delete from "+table+" where "+condition;
+      statement.executeUpdate(command);
+      System.out.println("deleted tuple");
+    }
+    catch (SQLException e) {
+      System.out.println("Could not delete tuple");
+      e.printStackTrace();
+    }
+  }
+  
   public ArrayList<Long> getTeamPlayerID(int team_id) {
     try {
       Statement statement = this.conn.createStatement();
       String command="select Plays.player_id from "
-          + "Plays inner join Team on Team.team_id=Plays.team_id";
+          + "Plays inner join Team on Team.team_id=Plays.team_id where Plays.team_id="+team_id;
       ResultSet result = statement.executeQuery(command);
       ArrayList<Long> teaminfo = new ArrayList<Long>();
       while (result.next()) {
