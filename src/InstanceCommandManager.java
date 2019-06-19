@@ -70,7 +70,7 @@ public class InstanceCommandManager extends CommandManager {
     else if (command.equals("teams")) {
       ArrayList<Integer> team_ids=db.getTeamIDInstance(channel.getIdLong());
       if(team_ids==null) {
-        channel.sendMessage("No teams in this instance yet").queue();;
+        channel.sendMessage("No teams in this instance yet").queue();
         return;
       }
       String message="";
@@ -239,14 +239,13 @@ public class InstanceCommandManager extends CommandManager {
       GameManager gm = gameManagers.get(gameThreads.get(instanceID));
       try {
         String startMessage = gm.start(arguments, instanceID, channel);
+        System.out.println("From instance"+startMessage);
         channel.sendMessage(startMessage).queue();
         db.updateInstanceField("Instance", "started", "1", instanceID);
       }
       catch (Exception e) {
+        e.printStackTrace();
         String message = e.getMessage();
-        int index = Integer.parseInt(message.substring(0, message.indexOf(":") - 1));
-        String description = message.substring(message.indexOf(":") + 1);
-        message = this.errorMessage(command, arguments, index, description);
         channel.sendMessage(message).queue();
         return;
       }

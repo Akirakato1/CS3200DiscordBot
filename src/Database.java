@@ -211,6 +211,7 @@ public class Database {
   public void deleteInstance(long channel_id) {
     try {
       Statement statement = this.conn.createStatement();
+      statement.execute("DELETE FROM Team WHERE instance_id=" + channel_id);
       statement.execute("DELETE FROM Invite WHERE instance_id=" + channel_id);
       String command = "Delete from Instance where instance_id=" + channel_id;
       statement.executeUpdate(command);
@@ -729,14 +730,18 @@ public class Database {
       String command = "Select * from " + tablename+" ORDER BY RAND() LIMIT 1";
       ResultSet result = this.getResultSet(command);
       result.next();
+      System.out.println("received tuple");
       ArrayList<String> array = new ArrayList<String>();
-      for(int i = 1; i <= result.getFetchSize(); i++) {
+      int count=1;
+      while(true) {
         try {
-          array.add(result.getString(i));
+          array.add(result.getString(count));
+          count++;
         }catch(Exception e) {
-          return array;
+          break;
         }
       }
+      System.out.println(array);
       return array;
     }
     
