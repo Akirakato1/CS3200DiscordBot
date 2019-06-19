@@ -7,7 +7,7 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 // Abstracted functionality for a command manager.
 public abstract class CommandManager {
-  protected static final float SIMILARITY_THRESHOLD = 0.25f;
+  protected static final float SIMILARITY_THRESHOLD = 0.45f;
   ArrayList<String[]> commands;
   Database db;
 

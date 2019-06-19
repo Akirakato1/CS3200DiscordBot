@@ -267,7 +267,10 @@ public class GeneralCommandManager extends CommandManager{
       }
     }
     else if (command.contentEquals("join")) {
-
+      if(arguments.length != 1) {
+        channel.sendMessage("Error: !join expects 1 argument.").queue();
+        return;
+      }
       ArrayList<Long> ids = this.db.getInstanceIDbyName(arguments[0]);
       List<TextChannel> channels = channel.getGuild().getTextChannels();
       TextChannel target_channel = null;
