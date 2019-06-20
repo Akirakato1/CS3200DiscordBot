@@ -1,3 +1,4 @@
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -42,14 +43,8 @@ public class Database {
 
   public void joinInstance(long player_id, long channel_id) {
     try {
-      Statement statement = this.conn.createStatement();
-      String update_freespot = "Update Instance set free_spots=free_spots-1 where instance_id="
-          + channel_id;
-      String delete_invite = "Delete from Invite where instance_id=" + channel_id + " and receiver="
-          + player_id;
-      statement.executeUpdate(update_freespot);
-      statement.executeUpdate(delete_invite);
-      this.createPlays(player_id, channel_id);
+      CallableStatement cs=this.conn.prepareCall("{Call joinInstance("+player_id+", "+channel_id+")}");
+      cs.executeUpdate();
       System.out.println("player joined instance");
     }
     catch (SQLException e) {
@@ -117,11 +112,8 @@ public class Database {
   
   public void leaveInstance(long player_id, long channel_id) {
     try {
-      Statement statement = this.conn.createStatement();
-      String update_freespot = "Update Instance set free_spots=free_spots+1 where instance_id="
-          + channel_id;
-      statement.executeUpdate(update_freespot);
-      this.deletePlays(player_id, channel_id);
+      CallableStatement cs=this.conn.prepareCall("{Call leaveInstance("+player_id+", "+channel_id+")}");
+      cs.executeUpdate();
       System.out.println("player left instance");
     }
     catch (SQLException e) {
@@ -132,10 +124,8 @@ public class Database {
 
   public void createPlays(long player_id, long channel_id) {
     try {
-      Statement statement = this.conn.createStatement();
-      String command = "INSERT IGNORE INTO Plays (player_id,instance_id)" + " Values (" + player_id
-          + ", " + channel_id + ")";
-      statement.executeUpdate(command);
+      CallableStatement cs=this.conn.prepareCall("{Call createPlays("+player_id+", "+channel_id+")}");
+      cs.executeUpdate();
       System.out.println("Created Plays for " + player_id + " in " + channel_id);
     }
     catch (SQLException e) {
@@ -146,10 +136,8 @@ public class Database {
 
   public void deletePlays(long player_id, long channel_id) {
     try {
-      Statement statement = this.conn.createStatement();
-      String command = "Delete from Plays where instance_id=" + channel_id + " and player_id="
-          + player_id;
-      statement.executeUpdate(command);
+      CallableStatement cs=this.conn.prepareCall("{Call deletePlays("+player_id+", "+channel_id+")}");
+      cs.executeUpdate();
       System.out.println("deleted Plays for " + player_id + " in " + channel_id);
     }
     catch (SQLException e) {
@@ -188,7 +176,6 @@ public class Database {
   public void createInstance(String privacy, String game_id, int freespot, long channel_id,
       long server_id,String instance_name) {
     try {
-      Statement statement = this.conn.createStatement();
       String visibility;
       if (privacy.equals("private")) {
         visibility = "false";
@@ -196,10 +183,10 @@ public class Database {
       else {
         visibility = "true";
       }
-
-      String command = "INSERT INTO Instance (instance_id,free_spots,game_id,public,started,server_id,instance_name)"
-          + " Values (" + channel_id + ", " + freespot + ", " + game_id + ", " + visibility +", false ,"+server_id+", '"+instance_name+"')";
-      statement.executeUpdate(command);
+      CallableStatement cs=this.conn.prepareCall(
+          "{Call createInstance("+visibility+", "+game_id+", "+freespot+", "+channel_id+", "+server_id+", '"+instance_name+"')}"
+          );
+      cs.executeUpdate();
       System.out.println("Created instance in database: " + instance_name);
     }
     catch (SQLException e) {
@@ -210,11 +197,8 @@ public class Database {
 
   public void deleteInstance(long channel_id) {
     try {
-      Statement statement = this.conn.createStatement();
-      statement.execute("DELETE FROM Team WHERE instance_id=" + channel_id);
-      statement.execute("DELETE FROM Invite WHERE instance_id=" + channel_id);
-      String command = "Delete from Instance where instance_id=" + channel_id;
-      statement.executeUpdate(command);
+      CallableStatement cs=this.conn.prepareCall("{Call deleteInstance("+channel_id+")}");
+      cs.executeUpdate();
       System.out.println("Deleted instance " + channel_id);
     }
     catch (SQLException e) {
