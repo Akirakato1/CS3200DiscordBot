@@ -101,7 +101,7 @@ public class QuizBowlManager extends GameManager {
       // Add answer time-out Future
       Runnable ato = new Runnable() {
         public void run() {
-          channel.sendMessage("You took too long to answer. Better luck next time!").queue();
+          answerTimeUp(channel, session);
           readyNextQuestion(channel, session, DELAY_BETWEEN_ROUNDS);
         }
       };
@@ -397,7 +397,8 @@ public class QuizBowlManager extends GameManager {
       System.out.println("Couldn't clear answering");
       e.printStackTrace();
     }
-    /*
+    //TODO: Display the correct answer (remove later)
+    String qid = db.getFieldWithConditionTable("QuizBowl_Single", "current_q", "instance_id="+instanceID);
     String correctAnswer = db.getFieldWithConditionTable("QuizBowl_Questions", "answer",
         "qbq_id=" + qid);
     String[] delimiters = { "&", "; accept", "[accept", "prompt" };
@@ -409,8 +410,9 @@ public class QuizBowlManager extends GameManager {
       }
     }
     correctAnswer = correctAnswer.substring(0, trimPoint);
-    String message = "You didn't answer quick enough! The correct answer was: "+correctAnswer;
-    */
+    String message = "You didn't answer quick enough!\nThe correct answer was: "+correctAnswer;
+    channel.sendMessage(message).queue();
+    
   }
 
   private HashMap<Long, Integer> calculateScores(TextChannel channel, Long sessionID) {
