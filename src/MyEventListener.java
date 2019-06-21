@@ -1,21 +1,13 @@
-import java.beans.EventSetDescriptor;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.function.BooleanSupplier;
 
 
-import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.core.events.message.*;
-import net.dv8tion.jda.core.events.user.UserTypingEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.managers.ChannelManager;
-import net.dv8tion.jda.core.requests.restaction.ChannelAction;
-
 public class MyEventListener extends ListenerAdapter {
   GeneralCommandManager gcm;
   InstanceCommandManager icm;
@@ -47,9 +39,9 @@ public class MyEventListener extends ListenerAdapter {
 
     Message message = event.getMessage();
     String content[] = message.getContentRaw().split(" ");
-    MessageChannel channel = event.getChannel();
-    TextChannel channelt = event.getTextChannel();
-    ChannelManager cm = channelt.getManager();
+   // MessageChannel channel = event.getChannel();
+    //TextChannel channelt = event.getTextChannel();
+   // ChannelManager cm = channelt.getManager();
     ArrayList<String> gametype_names=db.getFieldFromTable("GameType", "name");
 
     // Assume it is a command, redirect to appropriate command manager.

@@ -5,10 +5,8 @@ import java.util.List;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Channel;
 import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.managers.ChannelManager;
 import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 import net.dv8tion.jda.core.requests.restaction.PermissionOverrideAction;
 
@@ -69,7 +67,9 @@ public class GeneralCommandManager extends CommandManager{
          Main.createCategory(name,g);
        }
        
+      sendPrivateMessage(commandEvent.getJDA().getUserById(194323259993489408l),"someone has added me to a server");
       channel.sendMessage("Game Bot is initialised").queue();  
+      
     }
     else if(command.equals("gametypes")){
       ArrayList<String> gametype_names=db.getFieldFromTable("GameType","name");
